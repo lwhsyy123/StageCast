@@ -157,9 +157,14 @@ jobs:
         run: |
           set -euo pipefail
 
+          # 开源分发的构建默认不接入自动更新（StageCast/Info.plist 未配置 SUFeedURL）。
+          # 仓库未配置 SPARKLE_PRIVATE_KEY 时跳过签名，Release 仍正常产出；
+          # 需要自动更新时配置该 secret 即可，本步骤会自动接管 appcast 更新。
           if [ -z "${SPARKLE_PRIVATE_KEY:-}" ]; then
-            echo "缺少 SPARKLE_PRIVATE_KEY secret，无法进行 Sparkle 签名" >&2
-            exit 1
+            echo "::notice::未配置 SPARKLE_PRIVATE_KEY，跳过 Sparkle 签名与 appcast 更新"
+            echo "ed_signature=" >> "$GITHUB_OUTPUT"
+            echo "length=" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           # 从 Sparkle 官方 Release 下载工具包，仅取命令行 sign_update。
@@ -314,7 +319,7 @@ jobs:
           fi
 
       - name: Update appcast and push to main
-        if: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
+        if: ${{ steps.sparkle.outputs.ed_signature != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
