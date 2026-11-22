@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  StageCast Sparkle appcast.
+
+  说明：开源分发的构建默认不接入自动更新（见 StageCast/Info.plist），
+  此文件用于后续绑定自己的更新源时填写。发布新版本时把 <item> 追加到 <channel> 里。
+-->
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>StageCast Updates</title>
+        <description>StageCast — macOS 手机投屏工具</description>
+        <language>zh-Hans</language>
+        <link>https://github.com/lwhsyy123/StageCast</link>
+    </channel>
+</rss>

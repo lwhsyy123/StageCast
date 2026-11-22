@@ -1,0 +1,627 @@
+/*
+  Localizable.strings (Simplified Chinese)
+  StageCast
+
+  Created by Sun on 2025/12/23.
+*/
+
+// MARK: - App
+"app.name" = "手机投屏";
+"app.description" = "macOS 设备投屏工具\n同时展示 iOS 和 Android 设备屏幕";
+
+// MARK: - Common
+"common.ok" = "确定";
+"common.cancel" = "取消";
+"common.close" = "关闭";
+"common.copy" = "复制";
+"common.refresh" = "刷新";
+"common.install" = "安装";
+"common.version" = "版本";
+"common.status" = "状态";
+"common.error" = "错误";
+"common.unknown" = "未知";
+"common.checking" = "检查中...";
+"common.loading" = "加载中...";
+
+// MARK: - Alert
+"alert.quit" = "退出";
+"alert.cancel" = "取消";
+"alert.quitConfirmMessage" = "确定要退出 StageCast 吗？";
+"alert.quitConfirmImpactMessage" = "退出后将中断当前 %d 个正在进行的投屏会话。";
+"alert.quitConfirmShortcutHint" = "提示：在此确认弹窗显示期间，再按一次 Cmd+Q 可直接退出。";
+"alert.dontSave" = "不保存";
+
+// MARK: - Menu
+"menu.about" = "关于 StageCast";
+"menu.preferences" = "偏好设置...";
+"menu.services" = "服务";
+"menu.hide" = "隐藏 StageCast";
+"menu.hideOthers" = "隐藏其他";
+"menu.showAll" = "全部显示";
+"menu.quit" = "退出 StageCast";
+"menu.checkForUpdates" = "检查更新...";
+"menu.device" = "设备";
+"menu.capture" = "捕获";
+"menu.refreshDevices" = "刷新设备";
+"menu.exportLogs" = "导出日志...";
+"menu.close" = "关闭";
+"menu.window" = "窗口";
+"menu.minimize" = "最小化";
+"menu.zoom" = "缩放";
+"menu.bringAllToFront" = "前置全部窗口";
+"menu.toggleFullScreen" = "进入全屏";
+"menu.help" = "帮助";
+"menu.githubHomepage" = "GitHub 主页";
+"menu.reportIssue" = "反馈问题";
+"menu.edit" = "编辑";
+"menu.undo" = "撤销";
+"menu.redo" = "重做";
+"menu.cut" = "剪切";
+"menu.copy" = "拷贝";
+"menu.paste" = "粘贴";
+"menu.selectAll" = "全选";
+"menu.find" = "查找";
+"menu.findAndReplace" = "查找和替换...";
+"menu.findNext" = "查找下一个";
+"menu.findPrevious" = "查找上一个";
+"menu.useSelectionForFind" = "用所选内容查找";
+"menu.selectAllOccurrences" = "选择所有相同项";
+"menu.selectNextOccurrence" = "选择下个相同项";
+"menu.jumpToSelection" = "跳到所选内容";
+"menu.format" = "格式";
+"menu.bold" = "粗体";
+"menu.italic" = "斜体";
+"menu.strikethrough" = "删除线";
+"menu.inlineCode" = "行内代码";
+"menu.heading" = "标题";
+"menu.heading1" = "一级标题";
+"menu.heading2" = "二级标题";
+"menu.heading3" = "三级标题";
+"menu.heading4" = "四级标题";
+"menu.heading5" = "五级标题";
+"menu.heading6" = "六级标题";
+"menu.bulletList" = "无序列表";
+"menu.numberedList" = "有序列表";
+"menu.blockquote" = "引用块";
+"menu.codeBlock" = "代码块";
+"menu.insertLink" = "插入链接...";
+"menu.insertImage" = "插入图片...";
+"menu.insertTable" = "插入表格...";
+"menu.insertHorizontalRule" = "水平分割线";
+
+// MARK: - Window
+"window.preferences" = "偏好设置";
+"window.main" = "手机投屏";
+
+// MARK: - Device Status
+"device.connected" = "已连接";
+"device.disconnected" = "已断开";
+"device.connecting" = "连接中...";
+"device.capturing" = "捕获中";
+"device.waitingAuth" = "等待授权";
+"device.idle" = "空闲";
+"device.paused" = "已暂停";
+"device.error" = "错误: %@";
+
+// MARK: - Device Platform
+"platform.ios" = "iOS";
+"platform.android" = "Android";
+
+// MARK: - Device Overlay
+"overlay.disconnected" = "未连接设备";
+"overlay.clickToStart" = "点击开始捕获";
+"overlay.fps" = "%d fps";
+
+// MARK: - Status Bar
+"statusBar.waitingDevice" = "等待设备连接...";
+"statusBar.ios" = "iOS: %@";
+"statusBar.android" = "Android: %@";
+
+// MARK: - Layout
+"layout.sideBySide" = "左右并排";
+"layout.auto" = "自动排列";
+"layout.floating" = "独立浮窗";
+"layout.grid" = "网格布局";
+"layout.gridPageSize" = "网格每页设备数";
+"layout.gridPageSizeAuto" = "自动";
+"layout.returnToGrid" = "返回网格";
+"layout.swapHint" = "拖拽交换位置";
+
+// MARK: - Theme
+"theme.system" = "跟随系统";
+"theme.light" = "浅色";
+"theme.dark" = "深色";
+
+// MARK: - Language
+"language.system" = "跟随系统";
+"language.en" = "English";
+"language.zhHans" = "简体中文";
+
+// MARK: - Preferences - Tabs
+"prefs.tab.general" = "通用";
+"prefs.tab.capture" = "捕获";
+"prefs.tab.recording" = "投屏录制";
+"prefs.tab.scrcpy" = "Scrcpy";
+"prefs.tab.permissions" = "权限";
+"prefs.tab.toolchain" = "工具链";
+"prefs.tab.about" = "关于";
+
+// MARK: - Preferences - Sections
+"prefs.section.language" = "语言";
+"prefs.section.appearance" = "外观";
+"prefs.section.layout" = "布局";
+"prefs.section.frameRate" = "帧率";
+"prefs.section.overlay" = "投屏画面浮层";
+"prefs.section.controlBar" = "投屏控制按钮";
+"prefs.section.window" = "窗口外观";
+"prefs.capture.autoMinimizeFloating" = "浮窗模式下自动最小化主窗口";
+"prefs.capture.autoMinimizeFloatingNote" = "每台设备都是独立窗口时，主窗口里没有画面，自动最小化到 Dock 腾出桌面。";
+"prefs.capture.showControlBar" = "显示投屏控制按钮";
+"prefs.capture.showControlBarNote" = "在画面旁显示独立的控制条：音量加/减、电源、旋转、主屏幕、返回。鼠标离开后自动收起。";
+"prefs.capture.showInfoOnHover" = "鼠标悬停时显示投屏信息";
+"prefs.capture.showInfoOnHoverNote" = "关闭后鼠标划过画面不再弹出浮层，演示时更干净。";
+"prefs.capture.showInfoStats" = "显示帧率与分辨率";
+"prefs.capture.showInfoAudio" = "显示音量控件";
+"prefs.capture.showInfoAudioNote" = "关闭后浮层中不再显示音量滑块，可用下方设备控制按钮调节音量。";
+"prefs.section.recordingOutput" = "保存位置";
+"prefs.section.recordingAudio" = "音频";
+"prefs.section.audio" = "音频";
+"prefs.section.iosAudio" = "iOS 音频";
+"prefs.section.androidAudio" = "Android 音频";
+"prefs.section.android" = "Android (Scrcpy)";
+"prefs.section.video" = "视频";
+"prefs.section.display" = "显示";
+"prefs.section.advanced" = "高级";
+"prefs.section.systemPermissions" = "系统权限";
+"prefs.section.iosPermissions" = "iOS 权限";
+"prefs.section.androidPermissions" = "Android 权限";
+"prefs.section.androidToolchain" = "Android 工具链";
+
+// MARK: - Preferences - Audio
+"prefs.audio.enableCapture" = "启用音频捕获";
+"prefs.audio.volume" = "音量";
+"prefs.audio.enableCaptureRestartHint" = "(重新开始投屏即可生效)";
+"prefs.audio.restartNow" = "立即重启";
+"prefs.audio.restartNowHint" = "保存设置并重启 StageCast，让改动立即生效";
+"prefs.audio.restartTitle" = "重启 StageCast？";
+"prefs.audio.restartMessage" = "应用会自动退出并重新打开。正在进行的投屏会中断。";
+"prefs.audio.restartFailedTitle" = "重启失败";
+"prefs.audio.iosNote" = "音频捕获需要通过 USB 连接 iOS 设备";
+"prefs.audio.androidNote" = "需要 Android 11 或更高版本。";
+"prefs.audio.codec" = "音频编解码器";
+
+// MARK: - Preferences - General
+"prefs.general.displaySettings" = "显示设置";
+"prefs.general.autoStartCapture" = "启动时自动开始捕获";
+"prefs.general.showFPS" = "显示帧率统计";
+"prefs.general.language" = "语言";
+"prefs.general.languageNote" = "更改语言后需重启应用生效";
+
+// MARK: - Preferences - Appearance
+"prefs.appearance.backgroundOpacity" = "背景透明度";
+"prefs.appearance.showDeviceBezel" = "显示设备边框";
+"prefs.appearance.showDeviceCameraOverlay" = "显示 iPhone 刘海 / 灵动岛";
+
+// MARK: - Preferences - Power
+"prefs.power.sectionTitle" = "电源管理";
+"prefs.power.preventAutoLock" = "捕获期间禁止自动锁屏";
+"prefs.power.preventAutoLockHelp" = "仅阻止系统自动休眠/锁屏，不影响手动锁屏";
+
+// MARK: - Preferences - Color Compensation
+"prefs.colorCompensation.sectionTitle" = "颜色补偿";
+"prefs.colorCompensation.enable" = "启用颜色补偿";
+"prefs.colorCompensation.openPanel" = "打开补偿面板...";
+"prefs.colorCompensation.description" = "在显示色彩不标准的屏幕上打开此功能并调节相关参数，以获取相对准确的投屏色彩表现。";
+
+// MARK: - Preferences - Layout
+"prefs.layout.devicePosition" = "默认设备布局";
+"prefs.layout.iosOnLeft" = "iOS | Android";
+"prefs.layout.androidOnLeft" = "Android | iOS";
+"prefs.layout.gridDoubleClickFocus" = "网格双击聚焦到单画面";
+
+// MARK: - Preferences - Capture
+"prefs.capture.frameRate" = "捕获帧率";
+"prefs.capture.frameRateNote" = "更高的帧率会增加 CPU 和 GPU 负载";
+"prefs.recording.saveLocation" = "保存到";
+"prefs.recording.saveLocationNote" = "录制文件将存放在所选目录的“StageCast Recordings”子文件夹中";
+"prefs.recording.chooseFolder" = "选择文件夹…";
+"prefs.recording.resetToDefault" = "恢复默认";
+"prefs.recording.enableMicrophone" = "录制麦克风音频";
+"prefs.recording.enableMicrophoneNote" = "关闭后仅录制画面，不再请求麦克风权限";
+
+// MARK: - Preferences - Scrcpy
+"prefs.scrcpy.bitrate" = "比特率";
+"prefs.scrcpy.maxSize" = "最大尺寸";
+"prefs.scrcpy.maxSizeNote" = "限制尺寸可以降低 CPU 负载";
+"prefs.scrcpy.showTouches" = "显示触摸点";
+"prefs.scrcpy.advancedNote" = "更多 scrcpy 配置请参考官方文档";
+"prefs.scrcpy.github" = "scrcpy GitHub";
+"prefs.scrcpy.noLimit" = "不限制";
+"prefs.scrcpy.pixels" = "%d 像素";
+"prefs.scrcpy.mbps" = "%d Mbps";
+"prefs.scrcpy.portRange" = "端口范围";
+"prefs.scrcpy.codec" = "视频编解码器";
+"prefs.scrcpy.controlEnabled" = "允许鼠标/键盘控制手机";
+"prefs.scrcpy.controlNote" = "开启后可直接在投屏画面上点击、滑动、滚动滚轮和输入文字。右键返回，中键回桌面，⌥ + 拖拽可模拟双指缩放/旋转，⌃V 把剪贴板粘贴到手机。";
+"prefs.scrcpy.controlMode" = "输入模式";
+"prefs.scrcpy.controlMode.mouse" = "鼠标（悬停 + 右键）";
+"prefs.scrcpy.controlMode.touch" = "触摸（模拟手指）";
+"prefs.scrcpy.controlHover" = "发送鼠标悬停事件";
+"prefs.scrcpy.audioRestartTitle" = "音频设置已变更";
+"prefs.scrcpy.audioRestartMessage" = "音频开关的变更需要重新建立投屏连接才能生效。是否立即重启投屏？";
+"prefs.scrcpy.audioRestartNow" = "立即重启";
+"prefs.scrcpy.audioRestartLater" = "稍后";
+"prefs.scrcpy.audioUnavailableTitle" = "该设备不支持音频投屏";
+"prefs.scrcpy.audioUnavailableMessage" = "已启用音频，但设备未传出音频数据。scrcpy 的音频通道需要 Android 11 或更高版本。";
+"prefs.scrcpy.controlRestartNote" = "控制相关设置需重新开始投屏后生效。";
+"menu.androidControl" = "鼠标/键盘控制手机";
+"menu.toggleWindowChrome" = "隐藏标题栏";
+"menu.layoutMode" = "布局";
+"overlay.control.record" = "录制";
+"overlay.control.volumeUp" = "音量加";
+"overlay.control.volumeDown" = "音量减";
+"overlay.control.power" = "电源键";
+"overlay.control.rotate" = "旋转屏幕";
+"overlay.control.home" = "主屏幕";
+"overlay.control.back" = "返回";
+"overlay.androidControlOn" = "已开启鼠标/键盘控制";
+"overlay.androidControlOff" = "已关闭鼠标/键盘控制";
+
+// MARK: - Preferences - Toolchain
+"prefs.toolchain.title" = "工具链状态";
+"prefs.toolchain.adb" = "adb: %@";
+"prefs.toolchain.scrcpy" = "scrcpy: %@";
+"prefs.toolchain.refresh" = "刷新状态";
+"prefs.toolchain.refreshStatus" = "刷新状态";
+"prefs.toolchain.installScrcpy" = "安装 scrcpy (Homebrew)";
+"prefs.toolchain.notInstalled" = "未安装";
+"prefs.toolchain.installing" = "安装中...";
+"prefs.toolchain.bundled" = "内嵌 %@";
+"prefs.toolchain.adbDesc" = "Android 调试工具";
+"prefs.toolchain.scrcpyDesc" = "Android 投屏客户端";
+"prefs.toolchain.scrcpyServerDesc" = "Android 投屏服务端 (DEX)";
+"prefs.toolchain.useCustomPath" = "使用自定义路径";
+"prefs.toolchain.pathPlaceholder" = "输入工具路径...";
+"prefs.toolchain.browse" = "浏览...";
+"prefs.toolchain.selectTool" = "选择 %@ 可执行文件";
+"prefs.toolchain.pathValid" = "路径有效";
+"prefs.toolchain.pathNotFound" = "文件不存在";
+"prefs.toolchain.pathIsDirectory" = "路径是目录，不是文件";
+"prefs.toolchain.pathNotExecutable" = "文件不可执行";
+
+// MARK: - Preferences - About
+"prefs.about.version" = "版本 %@";
+
+// MARK: - Android Device State
+"android.wireless.connect" = "无线连接…";
+"android.wireless.connectShort" = "连接";
+"android.wireless.inlineHint" = "输入手机 IP 即可无线连接；点「开启无线调试」可让当前 USB 设备支持无线。";
+"android.wireless.inlineHintNoUSB" = "输入手机 IP 连接；若未开启过无线调试，请先插上 USB 再点「开启无线调试」。";
+"android.wireless.pairTitle" = "配对码连接";
+"android.wireless.pairCode" = "配对码";
+"android.wireless.pairPort" = "配对端口";
+"android.wireless.pairAction" = "配对并连接";
+"android.wireless.pairHint" = "手机：开发者选项 → 无线调试 → 使用配对码配对，可看到配对端口与 6 位配对码。";
+"android.wireless.discover" = "扫描设备";
+"android.wireless.discoverEmpty" = "未发现无线调试设备，请确认手机与电脑在同一 Wi-Fi 且已开启无线调试。";
+"android.wireless.discovered" = "发现 %d 个无线调试服务";
+"android.wireless.showDiagnostics" = "诊断";
+"android.wireless.stepKillServer" = "重启 adb 服务";
+"android.wireless.stepStartServer" = "启动 adb 服务";
+"android.wireless.stepConnect" = "连接设备";
+"android.wireless.stepVerify" = "确认设备在线";
+"android.wireless.stepTcpip" = "开启 TCP 模式";
+"android.wireless.stepReconnect" = "重新连接";
+"android.wireless.stepRestartAdb" = "重启 adb（修复 No route to host）";
+"android.wireless.stepConnectRetry" = "重试连接";
+"android.wireless.stepPair" = "配对设备";
+"android.wireless.pairSuccess" = "配对成功";
+"devicePicker.title" = "连接设备";
+"devicePicker.filterAll" = "全部";
+"devicePicker.filterWired" = "有线";
+"devicePicker.filterWireless" = "无线";
+"devicePicker.empty" = "未发现设备，请先连接或扫描";
+"devicePicker.scanWireless" = "扫描无线设备";
+"devicePicker.stopAll" = "全部停止";
+"devicePicker.viaUSB" = "USB";
+"devicePicker.viaWiFi" = "Wi-Fi";
+"devicePicker.offline" = "离线";
+"devicePicker.start" = "投屏";
+"devicePicker.stop" = "停止";
+"devicePicker.switchTitle" = "切换投屏设备";
+"devicePicker.switchMessage" = "当前正在投屏「%@」。要切换到「%@」吗？";
+"devicePicker.switchConfirm" = "切换";
+"devicePicker.toggleTooltip" = "选择并连接多台设备";
+"devicePicker.manualSection" = "手动连接与配对";
+"android.wireless.chooseDeviceTitle" = "选择要连接的设备";
+"android.wireless.chooseDeviceMessage" = "发现多台无线调试设备，请选择目标设备。";
+"android.wireless.discoveredPort" = "已发现设备（端口 %d）";
+"android.wireless.pairConnectedNeedPort" = "配对成功，但未能自动找到调试端口。请在手机的「无线调试」页面查看显示的端口，在 IP 后以 IP:端口 形式填写。";
+"android.wireless.diagnosticsFailed" = "无线连接失败，请查看诊断输出";
+"android.wireless.connectTitle" = "通过 Wi-Fi 连接 Android 设备";
+"android.wireless.connectMessage" = "输入手机上的 IP 地址。首次使用请在手机「开发者选项 → 无线调试」中开启，或先用 USB 连接后点「开启无线调试」。";
+"android.wireless.hostPlaceholder" = "设备 IP 或 IP:端口";
+"android.wireless.portLabel" = "端口";
+"android.wireless.enableForUSB" = "开启无线调试";
+"android.wireless.enableHint" = "用 USB 连接的设备可以直接开启无线调试，之后即可拔掉数据线。";
+"android.wireless.connected" = "无线连接成功: %@";
+"android.wireless.disconnect" = "断开无线连接";
+"android.wireless.invalidHost" = "请输入有效的 IP 地址";
+"android.wireless.needUSB" = "请先用 USB 连接设备，再点「开启无线调试」";
+"android.wireless.enabledTitle" = "无线调试已开启";
+"android.wireless.enabledMessage" = "设备 IP 为 %@，端口 %d。现在可以拔掉数据线，用「无线连接」重新接入。";
+"android.wireless.connectFailed" = "无线连接失败";
+"android.wireless.connectFailedDetail" = "无线连接失败: %@";
+"android.wireless.enableFailed" = "开启无线调试失败: %@";
+"android.wireless.ipNotFound" = "无法获取设备 IP，请确认手机已连接 Wi-Fi";
+"android.state.device" = "已连接";
+"android.state.unauthorized" = "等待授权";
+"android.state.offline" = "离线";
+"android.state.noPermissions" = "权限不足";
+"android.state.unknown" = "未知状态";
+
+// MARK: - Android Device Hints
+"android.hint.unauthorized" = "请在手机上点击「允许 USB 调试」";
+"android.hint.offline" = "请重新插拔数据线";
+"android.hint.noPermissions" = "请检查 adb 权限设置";
+"android.hint.unknown" = "请重新连接设备";
+
+// MARK: - iOS Device
+"ios.hint.trust" = "请在设备上点击「信任此电脑」以允许访问";
+"ios.hint.occupied" = "设备被 %@ 占用，请关闭后重试";
+"ios.hint.occupiedUnknown" = "设备被其他应用占用，请关闭后重试";
+"ios.hint.locked" = "设备已锁屏/息屏，请解锁后重试";
+"ios.hint.otherApp" = "其他应用";
+"ios.onlyMirror" = "仅投屏";
+"ios.onlyMirrorHint" = "iOS 设备只支持画面投屏，暂不支持反向控制";
+
+// MARK: - Errors
+"error.connectionFailed" = "连接失败: %@";
+"error.permissionDenied" = "权限被拒绝";
+"error.windowNotFound" = "未找到投屏窗口";
+"error.captureStartFailed" = "捕获启动失败: %@";
+"error.captureInterrupted" = "捕获已中断";
+"error.processTerminated" = "进程已终止 (退出码: %d)";
+"error.timeout" = "连接超时";
+"error.noDevice" = "没有可用的 %@ 设备";
+"error.startCaptureFailed" = "启动 %@ 捕获失败: \n%@";
+
+// MARK: - Toolbar
+"toolbar.refresh" = "刷新";
+"toolbar.refreshing" = "刷新中...";
+"toolbar.refreshComplete" = "设备列表已刷新";
+"toolbar.deviceInfoRefreshed" = "设备信息已刷新";
+"toolbar.swap" = "交换";
+"toolbar.swapPanels" = "交换";
+"toolbar.swapPanels.tooltip" = "交换设备位置";
+"toolbar.preferences" = "偏好设置";
+"toolbar.swap.tooltip" = "交换设备位置";
+"toolbar.refresh.tooltip" = "刷新设备列表";
+"toolbar.preferences.tooltip" = "偏好设置";
+"toolbar.toggleBezel" = "切换边框";
+"toolbar.toggleBezel.tooltip" = "显示/隐藏设备边框";
+"toolbar.showBezel" = "显示边框";
+"toolbar.hideBezel" = "隐藏边框";
+"toolbar.layoutMode" = "布局模式";
+"toolbar.layoutMode.tooltip" = "切换显示布局模式";
+"toolbar.preventSleep" = "防休眠";
+"toolbar.preventSleep.tooltip" = "捕获期间阻止系统自动休眠/锁屏";
+"toolbar.preventSleep.on" = "防休眠已启用";
+"toolbar.preventSleep.off" = "防休眠已禁用";
+"toolbar.fullScreen" = "全屏";
+"toolbar.fullScreen.tooltip" = "进入/退出全屏 (⌃⌘F)";
+
+// MARK: - Permission
+"permission.unknown" = "未知";
+"permission.checking" = "检查中...";
+"permission.granted" = "已授权";
+"permission.denied" = "已拒绝";
+"permission.notDetermined" = "未设置";
+"permission.screenRecording.name" = "屏幕录制";
+"permission.screenRecording.desc" = "用于捕获 Android 设备投屏画面（仅备用方案需要）";
+"permission.camera.name" = "摄像头";
+"permission.camera.desc" = "用于捕获通过 USB 连接的 iOS 设备画面";
+"permission.microphone.name" = "麦克风";
+"permission.microphone.desc" = "录制时用于采集麦克风音频";
+"permission.openSystemPrefs" = "打开设置";
+"permission.requestAgain" = "重新请求";
+"permission.requestAgainTitle" = "需要手动重新授权";
+"permission.requestAgainMessage" = "macOS 只会在首次申请时弹出权限窗口。要重新授权，请点「打开设置」，在列表里勾选 StageCast；若已勾选仍不生效，请取消勾选后重新勾选，或先退出应用再重新打开。";
+"permission.deniedHelp" = "点「重新请求」可尝试再次弹出授权窗口";
+"permission.microphoneHelperNote" = "麦克风由独立的「StageCast Audio Helper」申请权限。请在系统设置的麦克风列表中同时勾选 StageCast 与 StageCast Audio Helper。";
+"permission.revoke" = "撤销";
+"permission.revokeTitle" = "撤销权限";
+"permission.revokeScreenRecordingHint" = "要撤销屏幕录制权限，请在「系统设置 > 隐私与安全性 > 屏幕录制」中取消勾选 StageCast，然后重启应用。";
+"permission.revokeCameraHint" = "要撤销摄像头权限，请在「系统设置 > 隐私与安全性 > 摄像头」中取消勾选 StageCast，然后重启应用。";
+"permission.revokeMicrophoneHint" = "要撤销麦克风权限，请在「系统设置 > 隐私与安全性 > 麦克风」中取消勾选 StageCast，然后重启应用。";
+"permission.revokeNote" = "要撤销权限，请点击「撤销」按钮，然后在系统设置中手动取消勾选 StageCast。更改将在重启应用后生效。";
+
+// MARK: - Background Color Mode
+"background.followTheme" = "跟随主题";
+"background.custom" = "自定义";
+
+// MARK: - Connection State
+"connection.notConnected" = "未连接";
+"connection.connecting" = "连接中...";
+"connection.waitingAuth" = "等待授权";
+"connection.connected" = "已连接";
+"connection.error" = "错误: %@";
+"connection.abnormalState" = "设备状态异常: %@";
+"connection.disconnected" = "设备断开连接";
+
+// MARK: - Overlay
+"overlay.startCapture" = "开始投屏";
+"overlay.stop" = "停止";
+"overlay.captureStopped" = "%@ 投屏已停止";
+"overlay.connectDevice" = "使用 USB 数据线连接设备";
+"overlay.connectIOS" = "使用 USB 数据线连接 iPhone";
+"overlay.connectAndroid" = "使用 USB 数据线连接 Android 设备";
+"overlay.waitingConnection" = "等待连接...";
+"overlay.deviceReady" = "设备已就绪";
+"overlay.deviceDetected" = "已检测到设备";
+"overlay.captureIOSHint" = "直接捕获 iPhone 屏幕";
+"overlay.captureAndroidHint" = "启动 scrcpy 投屏";
+"overlay.toolNotInstalled" = "%@ 未安装";
+"overlay.needInstall" = "需要安装 %@";
+"overlay.installTool" = "一键安装 %@";
+"overlay.waitingForIPhone" = "等待 iPhone 连接";
+"overlay.waitingForAndroid" = "等待 Android 连接";
+"overlay.waitingForDevice" = "等待手机连接";
+"overlay.waitingHint" = "打开「连接设备」面板，选择手机即可开始投屏";
+
+// MARK: - Device Info
+"deviceInfo.unknownModel" = "未知型号";
+"deviceInfo.unknownVersion" = "未知版本";
+"deviceInfo.unknown" = "未知";
+
+// MARK: - Toolchain Errors
+"toolchain.bundled" = "内嵌 %@";
+"toolchain.notFound.adb" = "未找到 adb";
+"toolchain.notFound.scrcpy" = "未找到 scrcpy";
+"toolchain.installHomebrew" = "请先安装 Homebrew";
+"toolchain.installFailed" = "安装失败";
+"toolchain.installScrcpyHint" = "需要安装 scrcpy 才能投屏 Android 设备";
+"toolchain.installScrcpyButton" = "一键安装 scrcpy";
+
+// MARK: - Android Connection
+"android.authTimeout" = "等待授权超时，请在手机上点击「允许 USB 调试」";
+"android.mirrorStartFailed" = "启动投屏失败: %@";
+"android.mirrorTerminated" = "投屏意外终止 (退出码: %d)";
+"android.cannotGetIp" = "无法获取设备 IP 地址";
+
+// MARK: - Process Errors
+"process.notFound" = "找不到可执行文件: %@";
+"process.failed" = "执行失败 (退出码: %d): %@";
+"process.timeout" = "执行超时";
+"process.cancelled" = "执行已取消";
+
+// MARK: - ADB Service
+"adb.startFailed" = "无法启动 adb 服务: %@";
+"adb.stopFailed" = "无法停止 adb 服务: %@";
+
+// MARK: - Device Capture Errors
+"capture.deviceNotConnected" = "设备未连接";
+"capture.sessionNotInitialized" = "捕获会话未初始化";
+"capture.cannotGetDevice" = "无法获取捕获设备: %@";
+"capture.cannotAddInput" = "无法添加视频输入";
+"capture.inputFailed" = "创建视频输入失败: %@";
+"capture.deviceNotReady" = "无法使用 %@。\n\n请确保：\n1. iPhone 屏幕已解锁 \n2. 在 iPhone 上点击「信任此电脑」 \n3. 已授予摄像头权限";
+"capture.cannotAddOutput" = "无法添加视频输出";
+
+// MARK: - iOS Screen Mirror
+"ios.enableFailed" = "启用失败，错误码: %d";
+
+// MARK: - iOS Device Type
+"ios.deviceType.unknown" = "未知";
+
+// MARK: - Installation Log
+"install.checkingHomebrew" = "🔍 正在检查 Homebrew...\n";
+"install.homebrewNotFound" = "❌ 未检测到 Homebrew\n\n";
+"install.installHomebrewPrompt" = "请先安装 Homebrew:\n/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"";
+"install.homebrewFound" = "✅ 找到 Homebrew: %@\n\n";
+"install.startInstall" = "📦 正在安装 scrcpy（可能需要几分钟）...\n";
+"install.installSuccess" = "✅ scrcpy 安装成功\n";
+"install.installFailed" = "❌ 安装失败: %@\n";
+"install.verifyingInstall" = "🔍 正在验证安装...\n";
+
+// MARK: - Color Compensation
+"color.preset.neutral" = "中性";
+"color.preset.coldTV" = "偏冷电视";
+"color.preset.grayishTV" = "发灰电视";
+"color.preset.oversaturatedTV" = "过饱和电视";
+"color.compensation.title" = "颜色补偿";
+"color.compensation.enabled" = "启用颜色补偿";
+"color.compensation.preset" = "预设";
+"color.compensation.compare" = "A/B 对比";
+"color.compensation.compare.compensated" = "补偿后";
+"color.compensation.compare.original" = "原始";
+"color.compensation.reset" = "重置";
+"color.compensation.savePreset" = "保存预设...";
+"color.compensation.deletePreset" = "删除";
+"color.compensation.customPresets" = "自定义";
+"color.compensation.savePresetTitle" = "保存预设";
+"color.compensation.savePresetMessage" = "请输入新预设的名称：";
+"color.compensation.savePresetPlaceholder" = "预设名称";
+"color.compensation.presetNameExists" = "已存在同名预设，请选择其他名称。";
+"color.compensation.deviceSelector" = "设备选择";
+"color.compensation.globalSettings" = "全局设置";
+"color.compensation.iosSettings" = "iOS 设置";
+"color.compensation.androidSettings" = "Android 设置";
+"color.mode.useGlobal" = "使用全局设置";
+"color.mode.independent" = "独立设置";
+"color.section.enable" = "开关";
+"color.section.preset" = "预设";
+"color.section.brightness" = "亮度曲线";
+"color.section.color" = "色彩";
+"color.section.actions" = "操作";
+"color.section.deviceMode" = "设备模式";
+"color.params.blackLift" = "黑电平";
+"color.params.whiteClip" = "白削峰";
+"color.params.highlightRollOff" = "高光滚落";
+"color.params.temperature" = "色温";
+"color.params.tint" = "色调";
+"color.params.saturation" = "饱和度";
+
+// MARK: - Toast
+"toast.exportLogsSuccess" = "日志导出成功";
+"toast.exportLogsFailed" = "日志导出失败: %@";
+
+// MARK: - Recording
+"recording.record" = "录制";
+"recording.stop" = "停止录制";
+"recording.started" = "录制已开始";
+"recording.startedNoMicrophoneDevice" = "录制已开始（未检测到麦克风，仅录制画面）";
+"recording.startedMicrophoneDenied" = "录制已开始（未授予麦克风权限，仅录制画面）";
+"recording.startedMicrophoneUnavailable" = "录制已开始（麦克风不可用，可能被其他应用占用，仅录制画面）";
+"recording.saved" = "录制已保存";
+"recording.startFailed" = "录制开始失败";
+"recording.microphonePermissionDenied" = "麦克风权限未开启，请在系统设置中允许 StageCast 访问麦克风";
+"recording.outputDirectoryUnavailable" = "无法创建录制保存目录";
+"recording.insufficientDiskSpace" = "磁盘空间不足，录制已停止";
+"recording.captureInterrupted" = "投屏已中断";
+"recording.openOutputDirectory" = "打开录制目录";
+"recording.openHistory" = "查看录制历史";
+"recording.back" = "返回";
+"recording.play" = "播放";
+"recording.pause" = "暂停";
+"recording.revealDirectory" = "查看目录";
+"recording.delete" = "删除";
+"recording.deleteConfirmTitle" = "删除这条录制记录？";
+"recording.deleteConfirmMessage" = "将把「%@」移入废纸篓，可从废纸篓恢复。";
+"recording.deleteConfirmButton" = "移入废纸篓";
+"recording.cancel" = "取消";
+"recording.deleteFailed" = "删除录制失败";
+"recording.historySummary" = "共 %1$d 条 · 占用 %2$@";
+"recording.replay" = "回放";
+"recording.noHistory" = "暂无录制记录";
+"recording.historyTitle" = "录制历史";
+"recording.historyDetail" = "%@ · %d 台设备";
+"recording.rewindFiveSeconds" = "后退5秒";
+"recording.forwardFiveSeconds" = "前进5秒";
+"recording.noSnapshots" = "暂无录制画面";
+"recording.replayLoadFailed" = "录制音频加载失败";
+"recording.replayTitle" = "回看 %@";
+"recording.replayDeviceCount" = "%d 台设备";
+"recording.savedLocation" = "已保存：%@";
+"recording.recordingWithElapsed" = "录制中 %@";
+
+// MARK: - Menu (Color)
+"menu.view" = "显示";
+"menu.colorCompensation" = "颜色补偿...";
+"menu.toggleDeviceBezel" = "显示设备边框";
+"menu.togglePreventSleep" = "捕获时禁止息屏";
+
+"toolbar.swap" = "交换";
+"toolbar.swapTooltip" = "交换设备位置";
+
+"overlay.control.mute" = "静音";
+"overlay.control.unmute" = "取消静音";
+
+// MARK: - Floating Window
+"floating.disconnected" = "设备已断开";
+"floating.disconnectedHint" = "投屏已中断，窗口保留在原位";
+"floating.reconnect" = "重新连接";
+"floating.reconnectFailed" = "未找到设备，请确认手机与 Mac 在同一网络";
+"floating.alwaysOnTop" = "窗口置顶";
+"floating.recenter" = "移到屏幕中央";
+"floating.zoomPercent" = "缩放 %d%%";

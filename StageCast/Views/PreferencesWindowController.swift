@@ -1,0 +1,2770 @@
+//
+//  PreferencesWindowController.swift
+//  StageCast
+//
+//  Created by Sun on 2025/12/22.
+//
+//  偏好设置窗口控制器
+//  包含四个 Tab：
+//  - 通用（语言、外观、布局、连接）
+//  - 捕获（帧率设置）
+//  - Scrcpy（视频、显示、高级）
+//  - 权限（系统权限、工具链）
+//
+
+import AppKit
+import AVFoundation
+
+// MARK: - 偏好设置窗口控制器
+
+final class PreferencesWindowController: NSWindowController {
+    // MARK: - 单例
+
+    static let shared: PreferencesWindowController = .init()
+
+    // MARK: - 初始化
+
+    convenience init() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 480),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = L10n.window.preferences
+        window.titlebarSeparatorStyle = .none
+        window.titlebarAppearsTransparent = true
+        window.center()
+        // 禁用初始焦点，避免显示 tab 焦点环
+        window.initialFirstResponder = nil
+        window.autorecalculatesKeyViewLoop = false
+
+        // 添加空 toolbar 以匹配主窗口风格（影响 titlebar 和圆角）
+        let toolbar = NSToolbar(identifier: "PreferencesToolbar")
+        toolbar.displayMode = .iconOnly
+        toolbar.showsBaselineSeparator = false
+        window.toolbar = toolbar
+
+        self.init(window: window)
+
+        window.contentViewController = PreferencesViewController()
+    }
+
+    override func showWindow(_ sender: Any?) {
+        super.showWindow(sender)
+        window?.center()
+        // 清除焦点，避免显示焦点环
+        window?.makeFirstResponder(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+// MARK: - Flipped View（坐标系从上向下）
+
+private class FlippedView: NSView {
+    override var isFlipped: Bool {
+        true
+    }
+}
+
+private final class FlexibleSpacerView: NSView {
+    var minLength: CGFloat = 0
+}
+
+private final class FixedSizeTextField: NSTextField {
+    var preferredWidth: CGFloat = 0
+
+    override var intrinsicContentSize: NSSize {
+        let size = super.intrinsicContentSize
+        guard preferredWidth > 0 else { return size }
+        return NSSize(width: preferredWidth, height: size.height)
+    }
+}
+
+private enum LayoutMetrics {
+    static let rowMinHeight: CGFloat = 40
+    static let rowVerticalPadding: CGFloat = 8
+}
+
+/// 计算 NSButton 需要的宽度。
+/// 系统对 rounded / small 按钮返回的固有宽度偏小，中文标题会被截断，
+/// 因此用标题实际文本宽度兜底，保证按钮始终能完整显示文字。
+private func buttonSize(_ button: NSButton, maxWidth: CGFloat) -> CGSize {
+    var size = button.intrinsicContentSize
+    if size.width <= 0 || size.height <= 0 {
+        button.sizeToFit()
+        size = button.frame.size
+    }
+    if size.width <= 0 || size.height <= 0 {
+        size = button.fittingSize
+    }
+
+    let title = button.title
+    if !title.isEmpty {
+        let font = button.font ?? NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        let textWidth = ceil((title as NSString).size(withAttributes: [.font: font]).width)
+        let horizontalPadding: CGFloat = button.controlSize == .small ? 22 : 30
+        size.width = max(size.width, textWidth + horizontalPadding)
+    }
+
+    return CGSize(width: min(maxWidth, ceil(size.width) + 4), height: max(0, size.height))
+}
+
+private final class PaddingView: NSView {
+    private let contentView: NSView
+    private let insets: NSEdgeInsets
+    private var _tag: Int = 0
+
+    override var tag: Int {
+        get { _tag }
+        set { _tag = newValue }
+    }
+
+    init(contentView: NSView, insets: NSEdgeInsets) {
+        self.contentView = contentView
+        self.insets = insets
+        super.init(frame: .zero)
+        addSubview(contentView)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var isFlipped: Bool {
+        true
+    }
+
+    func requiredSize(for width: CGFloat) -> CGSize {
+        let contentWidth = max(0, width - insets.left - insets.right)
+        let contentSize = sizeForView(contentView, maxWidth: contentWidth)
+        let totalWidth = width > 0 ? width : contentSize.width + insets.left + insets.right
+        return CGSize(
+            width: totalWidth,
+            height: contentSize.height + insets.top + insets.bottom
+        )
+    }
+
+    override func layout() {
+        super.layout()
+        let contentWidth = max(0, bounds.width - insets.left - insets.right)
+        let contentHeight = max(0, bounds.height - insets.top - insets.bottom)
+        contentView.frame = CGRect(
+            x: insets.left,
+            y: insets.top,
+            width: contentWidth,
+            height: contentHeight
+        )
+        contentView.needsLayout = true
+        contentView.layoutSubtreeIfNeeded()
+    }
+
+    private func sizeForView(_ view: NSView, maxWidth: CGFloat) -> CGSize {
+        if let labeledRow = view as? LabeledRowView {
+            return labeledRow.requiredSize(for: maxWidth)
+        }
+        if let stackView = view as? StackContainerView {
+            let size = stackView.requiredSize(for: maxWidth)
+            let width = stackView.fillsCrossAxis ? maxWidth : size.width
+            return CGSize(width: width, height: size.height)
+        }
+        if let textField = view as? NSTextField {
+            let bounds = NSRect(x: 0, y: 0, width: maxWidth, height: .greatestFiniteMagnitude)
+            if let size = textField.cell?.cellSize(forBounds: bounds) {
+                // 添加少量余量，避免文本被裁剪
+                let paddedWidth = min(maxWidth, ceil(size.width) + 2)
+                return CGSize(width: paddedWidth, height: size.height)
+            }
+        }
+        let intrinsic = view.intrinsicContentSize
+        if intrinsic.width > 0, intrinsic.height > 0 {
+            return CGSize(width: min(maxWidth, intrinsic.width), height: intrinsic.height)
+        }
+        let fitting = view.fittingSize
+        return CGSize(width: min(maxWidth, fitting.width), height: fitting.height)
+    }
+}
+
+private final class StackContainerView: NSView {
+    enum Axis {
+        case vertical
+        case horizontal
+    }
+
+    enum Alignment {
+        case leading
+        case center
+        case trailing
+        case top
+        case centerY
+        case bottom
+    }
+
+    var axis: Axis = .vertical
+    var alignment: Alignment = .leading
+    var spacing: CGFloat = 0
+    var edgeInsets: NSEdgeInsets = .init(top: 0, left: 0, bottom: 0, right: 0)
+    var fillsCrossAxis: Bool = false
+    private(set) var arrangedSubviews: [NSView] = []
+    private var flexibleViews: Set<ObjectIdentifier> = []
+
+    override var isFlipped: Bool {
+        true
+    }
+
+    func addArrangedSubview(_ view: NSView) {
+        arrangedSubviews.append(view)
+        addSubview(view)
+        needsLayout = true
+    }
+
+    func setFlexible(_ view: NSView, isFlexible: Bool) {
+        let identifier = ObjectIdentifier(view)
+        if isFlexible {
+            flexibleViews.insert(identifier)
+        } else {
+            flexibleViews.remove(identifier)
+        }
+        needsLayout = true
+    }
+
+    func requiredSize(for width: CGFloat) -> CGSize {
+        let availableWidth = max(0, width - edgeInsets.left - edgeInsets.right)
+        switch axis {
+        case .vertical:
+            var totalHeight: CGFloat = edgeInsets.top + edgeInsets.bottom
+            var maxWidth: CGFloat = 0
+            var visibleCount = 0
+            for view in arrangedSubviews where !view.isHidden {
+                let size = sizeForView(view, maxWidth: availableWidth)
+                totalHeight += size.height
+                maxWidth = max(maxWidth, size.width)
+                visibleCount += 1
+            }
+            if visibleCount > 1 {
+                totalHeight += spacing * CGFloat(visibleCount - 1)
+            }
+            return CGSize(width: maxWidth + edgeInsets.left + edgeInsets.right, height: totalHeight)
+        case .horizontal:
+            var totalWidth: CGFloat = edgeInsets.left + edgeInsets.right
+            var maxHeight: CGFloat = 0
+            var visibleCount = 0
+            for view in arrangedSubviews where !view.isHidden {
+                let size = sizeForView(view, maxWidth: availableWidth)
+                totalWidth += size.width
+                maxHeight = max(maxHeight, size.height)
+                visibleCount += 1
+            }
+            if visibleCount > 1 {
+                totalWidth += spacing * CGFloat(visibleCount - 1)
+            }
+            return CGSize(width: totalWidth, height: maxHeight + edgeInsets.top + edgeInsets.bottom)
+        }
+    }
+
+    override func layout() {
+        super.layout()
+        layoutArrangedSubviews()
+    }
+
+    private func layoutArrangedSubviews() {
+        let availableWidth = max(0, bounds.width - edgeInsets.left - edgeInsets.right)
+        let availableHeight = max(0, bounds.height - edgeInsets.top - edgeInsets.bottom)
+
+        switch axis {
+        case .vertical:
+            var y = edgeInsets.top
+            let visible = arrangedSubviews.filter { !$0.isHidden }
+            for (index, view) in visible.enumerated() {
+                let size = sizeForView(view, maxWidth: availableWidth)
+                let x = alignedX(for: size.width, availableWidth: availableWidth)
+                view.frame = CGRect(
+                    x: edgeInsets.left + x,
+                    y: y,
+                    width: size.width,
+                    height: size.height
+                )
+                // 只标记需要布局，由系统统一处理
+                view.needsLayout = true
+                y += size.height
+                if index < visible.count - 1 {
+                    y += spacing
+                }
+            }
+        case .horizontal:
+            let visible = arrangedSubviews.filter { !$0.isHidden }
+            var sizes: [CGSize] = []
+            var totalPreferredWidth: CGFloat = 0
+            var totalPreferredHeight: CGFloat = 0
+            var shrinkableIndices: [Int] = []
+            var spacerIndices: [Int] = []
+
+            for (index, view) in visible.enumerated() {
+                let size = sizeForView(view, maxWidth: availableWidth)
+                sizes.append(size)
+                totalPreferredWidth += size.width
+                totalPreferredHeight = max(totalPreferredHeight, size.height)
+
+                if view is FlexibleSpacerView {
+                    spacerIndices.append(index)
+                } else if flexibleViews.contains(ObjectIdentifier(view)) {
+                    shrinkableIndices.append(index)
+                }
+            }
+
+            let totalSpacing = spacing * CGFloat(max(0, visible.count - 1))
+            let totalWidthWithSpacing = totalPreferredWidth + totalSpacing
+
+            if totalWidthWithSpacing > availableWidth, !shrinkableIndices.isEmpty {
+                let overflow = totalWidthWithSpacing - availableWidth
+                let shrinkableWidth = shrinkableIndices.reduce(CGFloat(0)) { $0 + sizes[$1].width }
+                let shrinkRatio = shrinkableWidth > 0 ? max(0, (shrinkableWidth - overflow) / shrinkableWidth) : 0
+                for index in shrinkableIndices {
+                    sizes[index].width = max(0, sizes[index].width * shrinkRatio)
+                }
+            }
+
+            var adjustedWidth: CGFloat = sizes.reduce(0) { $0 + $1.width } + totalSpacing
+            if adjustedWidth < availableWidth, !spacerIndices.isEmpty {
+                let remaining = availableWidth - adjustedWidth
+                let extraPerSpacer = remaining / CGFloat(spacerIndices.count)
+                for index in spacerIndices {
+                    sizes[index].width = max(
+                        (visible[index] as? FlexibleSpacerView)?.minLength ?? 0,
+                        sizes[index].width + extraPerSpacer
+                    )
+                }
+                adjustedWidth = sizes.reduce(0) { $0 + $1.width } + totalSpacing
+            }
+
+            if adjustedWidth < availableWidth, spacerIndices.isEmpty, !shrinkableIndices.isEmpty {
+                let remaining = availableWidth - adjustedWidth
+                let extraPerFlexible = remaining / CGFloat(shrinkableIndices.count)
+                for index in shrinkableIndices {
+                    sizes[index].width = max(0, sizes[index].width + extraPerFlexible)
+                }
+                adjustedWidth = sizes.reduce(0) { $0 + $1.width } + totalSpacing
+            }
+
+            var x = edgeInsets.left
+            for (index, view) in visible.enumerated() {
+                let size = sizes[index]
+                let y = alignedY(for: size.height, availableHeight: availableHeight)
+                view.frame = CGRect(
+                    x: x,
+                    y: edgeInsets.top + y,
+                    width: size.width,
+                    height: size.height
+                )
+                // 只标记需要布局，由系统统一处理
+                view.needsLayout = true
+                x += size.width
+                if index < visible.count - 1 {
+                    x += spacing
+                }
+            }
+        }
+    }
+
+    private func alignedX(for width: CGFloat, availableWidth: CGFloat) -> CGFloat {
+        switch alignment {
+        case .leading, .top, .centerY, .bottom:
+            0
+        case .center:
+            max(0, (availableWidth - width) / 2)
+        case .trailing:
+            max(0, availableWidth - width)
+        }
+    }
+
+    private func alignedY(for height: CGFloat, availableHeight: CGFloat) -> CGFloat {
+        switch alignment {
+        case .top:
+            0
+        case .centerY, .center:
+            max(0, (availableHeight - height) / 2)
+        case .bottom:
+            max(0, availableHeight - height)
+        case .leading, .trailing:
+            0
+        }
+    }
+
+    private func sizeForView(_ view: NSView, maxWidth: CGFloat) -> CGSize {
+        if let labeledRow = view as? LabeledRowView {
+            return labeledRow.requiredSize(for: maxWidth)
+        }
+        if let paddingView = view as? PaddingView {
+            return paddingView.requiredSize(for: maxWidth)
+        }
+        if let box = view as? NSBox, box.boxType == .separator {
+            let height = max(1, box.frame.height)
+            return CGSize(width: maxWidth, height: height)
+        }
+        if let textField = view as? FixedSizeTextField, textField.preferredWidth > 0 {
+            let height = max(0, textField.intrinsicContentSize.height)
+            return CGSize(width: min(maxWidth, textField.preferredWidth), height: height)
+        }
+        if view is NSSlider, view.frame.width > 0 {
+            return CGSize(width: min(maxWidth, view.frame.width), height: max(0, view.frame.height))
+        }
+        if let imageView = view as? NSImageView {
+            let imageSize = imageView.image?.size ?? .zero
+            let width = max(imageView.frame.width, imageSize.width)
+            let height = max(imageView.frame.height, imageSize.height)
+            if width > 0 || height > 0 {
+                return CGSize(width: min(maxWidth, max(0, width)), height: max(0, height))
+            }
+        }
+        if let stackView = view as? StackContainerView {
+            let baseWidth = view.frame.width > 0 ? min(view.frame.width, maxWidth) : maxWidth
+            let size = stackView.requiredSize(for: baseWidth)
+            let finalWidth: CGFloat = if stackView.fillsCrossAxis {
+                maxWidth
+            } else if view.frame.width > 0 {
+                baseWidth
+            } else {
+                size.width
+            }
+            return CGSize(width: finalWidth, height: size.height)
+        }
+        // NSTextField 必须在 NSControl 之前检查，因为 NSTextField 继承自 NSControl
+        if let textField = view as? NSTextField {
+            let bounds = NSRect(x: 0, y: 0, width: maxWidth, height: .greatestFiniteMagnitude)
+            if let size = textField.cell?.cellSize(forBounds: bounds) {
+                // 添加少量余量，避免文本被裁剪
+                let paddedWidth = min(maxWidth, ceil(size.width) + 2)
+                return CGSize(width: paddedWidth, height: size.height)
+            }
+        }
+        // NSButton 需要在通用 NSControl 之前检查，添加余量确保按钮文字不被裁剪
+        if let button = view as? NSButton {
+            return buttonSize(button, maxWidth: maxWidth)
+        }
+        if let control = view as? NSControl {
+            var size = control.intrinsicContentSize
+            if size.width <= 0 || size.height <= 0 {
+                control.sizeToFit()
+                size = control.frame.size
+            }
+            if size.width <= 0 || size.height <= 0 {
+                size = control.fittingSize
+            }
+            let width = min(maxWidth, max(0, size.width))
+            let height = max(0, size.height)
+            return CGSize(width: width, height: height)
+        }
+        let intrinsic = view.intrinsicContentSize
+        if intrinsic.width > 0, intrinsic.height > 0 {
+            return CGSize(width: min(maxWidth, intrinsic.width), height: intrinsic.height)
+        }
+        let fitting = view.fittingSize
+        if fitting.width > 0 || fitting.height > 0 {
+            return CGSize(width: min(maxWidth, fitting.width), height: fitting.height)
+        }
+        return CGSize(width: min(maxWidth, view.frame.width), height: view.frame.height)
+    }
+}
+
+private final class LabeledRowView: NSView {
+    private let labelView: NSView
+    private let controlView: NSView
+    private let spacing: CGFloat = 12
+    private let minRowHeight: CGFloat = LayoutMetrics.rowMinHeight
+    private let verticalPadding: CGFloat = LayoutMetrics.rowVerticalPadding
+
+    /// 使用 NSTextField 作为标签
+    init(label: NSTextField, control: NSView) {
+        labelView = label
+        controlView = control
+        super.init(frame: .zero)
+        addSubview(labelView)
+        addSubview(controlView)
+    }
+
+    /// 使用任意视图作为标签（用于复杂的左侧布局，如权限行）
+    init(labelView: NSView, control: NSView) {
+        self.labelView = labelView
+        controlView = control
+        super.init(frame: .zero)
+        addSubview(labelView)
+        addSubview(controlView)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var isFlipped: Bool {
+        true
+    }
+
+    func requiredSize(for width: CGFloat) -> CGSize {
+        let availableWidth = max(0, width)
+        let controlSize = sizeForView(controlView, maxWidth: .greatestFiniteMagnitude)
+        let labelMaxWidth = max(0, availableWidth - controlSize.width - spacing)
+        let labelSize = labelSizeForWidth(labelMaxWidth)
+        let contentHeight = max(labelSize.height, controlSize.height)
+        let height = max(minRowHeight, contentHeight + verticalPadding * 2)
+        return CGSize(width: availableWidth, height: height)
+    }
+
+    override func layout() {
+        super.layout()
+        let availableWidth = bounds.width
+        let controlSize = sizeForView(controlView, maxWidth: .greatestFiniteMagnitude)
+        let labelWidth = max(0, availableWidth - controlSize.width - spacing)
+        let labelSize = labelSizeForWidth(labelWidth)
+        let contentHeight = max(0, bounds.height - verticalPadding * 2)
+        let labelY = verticalPadding + max(0, (contentHeight - labelSize.height) / 2)
+        let controlY = verticalPadding + max(0, (contentHeight - controlSize.height) / 2)
+
+        labelView.frame = CGRect(x: 0, y: labelY, width: labelWidth, height: labelSize.height)
+        let controlX = max(0, availableWidth - controlSize.width)
+        controlView.frame = CGRect(
+            x: controlX,
+            y: controlY,
+            width: controlSize.width,
+            height: controlSize.height
+        )
+        labelView.needsLayout = true
+        labelView.layoutSubtreeIfNeeded()
+        controlView.needsLayout = true
+        controlView.layoutSubtreeIfNeeded()
+    }
+
+    private func labelSizeForWidth(_ width: CGFloat) -> CGSize {
+        guard width > 0 else { return .zero }
+        // 处理 StackContainerView
+        if let stackView = labelView as? StackContainerView {
+            return stackView.requiredSize(for: width)
+        }
+        // 处理 NSTextField
+        if let textField = labelView as? NSTextField {
+            let bounds = NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)
+            if let size = textField.cell?.cellSize(forBounds: bounds) {
+                return CGSize(width: min(width, size.width), height: size.height)
+            }
+            let size = textField.intrinsicContentSize
+            return CGSize(width: min(width, size.width), height: size.height)
+        }
+        // 通用处理
+        let intrinsic = labelView.intrinsicContentSize
+        if intrinsic.width > 0, intrinsic.height > 0 {
+            return CGSize(width: min(width, intrinsic.width), height: intrinsic.height)
+        }
+        let fitting = labelView.fittingSize
+        return CGSize(width: min(width, fitting.width), height: fitting.height)
+    }
+
+    private func sizeForView(_ view: NSView, maxWidth: CGFloat) -> CGSize {
+        if let stackView = view as? StackContainerView {
+            return stackView.requiredSize(for: maxWidth)
+        }
+        if let textField = view as? FixedSizeTextField, textField.preferredWidth > 0 {
+            let height = max(0, textField.intrinsicContentSize.height)
+            return CGSize(width: min(maxWidth, textField.preferredWidth), height: height)
+        }
+        if view is NSSlider, view.frame.width > 0 {
+            return CGSize(width: min(maxWidth, view.frame.width), height: max(0, view.frame.height))
+        }
+        if let imageView = view as? NSImageView {
+            let imageSize = imageView.image?.size ?? .zero
+            let width = max(imageView.frame.width, imageSize.width)
+            let height = max(imageView.frame.height, imageSize.height)
+            if width > 0 || height > 0 {
+                return CGSize(width: min(maxWidth, max(0, width)), height: max(0, height))
+            }
+        }
+        if let textField = view as? NSTextField {
+            let bounds = NSRect(x: 0, y: 0, width: maxWidth, height: .greatestFiniteMagnitude)
+            if let size = textField.cell?.cellSize(forBounds: bounds) {
+                // 添加少量余量，避免文本被裁剪
+                let paddedWidth = min(maxWidth, ceil(size.width) + 2)
+                return CGSize(width: paddedWidth, height: size.height)
+            }
+        }
+        // NSButton 需要在通用 NSControl 之前检查，添加余量确保按钮文字不被裁剪
+        if let button = view as? NSButton {
+            return buttonSize(button, maxWidth: maxWidth)
+        }
+        if let control = view as? NSControl {
+            var size = control.intrinsicContentSize
+            if size.width <= 0 || size.height <= 0 {
+                control.sizeToFit()
+                size = control.frame.size
+            }
+            if size.width <= 0 || size.height <= 0 {
+                size = control.fittingSize
+            }
+            return CGSize(width: min(maxWidth, max(0, size.width)), height: max(0, size.height))
+        }
+        let intrinsic = view.intrinsicContentSize
+        if intrinsic.width > 0, intrinsic.height > 0 {
+            return CGSize(width: min(maxWidth, intrinsic.width), height: intrinsic.height)
+        }
+        let fitting = view.fittingSize
+        return CGSize(width: min(maxWidth, fitting.width), height: fitting.height)
+    }
+}
+
+// MARK: - 偏好设置视图控制器
+
+final class PreferencesViewController: NSViewController {
+    // MARK: - UI 组件
+
+    private let segmentedControl = NSSegmentedControl()
+    private let contentContainer = NSView()
+    private var tabViews: [NSView] = []
+    private var currentTabIndex: Int = 0
+    private var scrollViewLayouts: [(NSScrollView, StackContainerView)] = []
+    private let valueLabelFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+
+    // MARK: - 生命周期
+
+    override func loadView() {
+        view = NSView(frame: NSRect(x: 0, y: 0, width: 520, height: 450))
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        setupLanguageObserver()
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        layoutRootViews()
+        layoutCurrentTab()
+        // 只更新当前显示的 Tab 的 ScrollView 布局
+        updateCurrentTabScrollViewLayout()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupLanguageObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleLanguageChange),
+            name: LocalizationManager.languageDidChangeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleLanguageChange() {
+        // 保存当前选中的 tab
+        let selectedTab = currentTabIndex
+
+        // 移除所有子视图
+        view.subviews.forEach { $0.removeFromSuperview() }
+        tabViews.removeAll()
+
+        // 重建 UI
+        setupUI()
+
+        // 恢复选中的 tab
+        segmentedControl.selectedSegment = selectedTab
+        showTab(at: selectedTab)
+
+        // 更新窗口标题
+        view.window?.title = L10n.window.preferences
+    }
+
+    // MARK: - UI 设置
+
+    private func setupUI() {
+        // 创建分段控件
+        let labels = [
+            L10n.prefs.tab.general,
+            L10n.prefs.tab.capture,
+            L10n.prefs.tab.recording,
+            L10n.prefs.tab.permissions,
+        ]
+        segmentedControl.segmentCount = labels.count
+        for (index, label) in labels.enumerated() {
+            segmentedControl.setLabel(label, forSegment: index)
+        }
+        segmentedControl.trackingMode = .selectOne
+        segmentedControl.target = self
+        segmentedControl.action = #selector(tabChanged(_:))
+        segmentedControl.selectedSegment = 0
+        segmentedControl.segmentStyle = .automatic
+        segmentedControl.focusRingType = .none
+        view.addSubview(segmentedControl)
+
+        // 创建内容容器
+        view.addSubview(contentContainer)
+        layoutRootViews()
+
+        // 创建各个 tab 的视图
+        tabViews = [
+            createGeneralView(),
+            createCaptureView(),
+            createRecordingView(),
+            createPermissionsView(),
+        ]
+
+        // 显示第一个 tab
+        showTab(at: 0)
+    }
+
+    @objc private func tabChanged(_ sender: NSSegmentedControl) {
+        showTab(at: sender.selectedSegment)
+    }
+
+    private func showTab(at index: Int) {
+        guard index >= 0, index < tabViews.count else { return }
+
+        // 移除当前显示的视图
+        contentContainer.subviews.forEach { $0.removeFromSuperview() }
+
+        // 添加新视图
+        let newView = tabViews[index]
+        contentContainer.addSubview(newView)
+        newView.frame = contentContainer.bounds
+        newView.autoresizingMask = [.width, .height]
+
+        currentTabIndex = index
+
+        // 只更新当前显示的 Tab 的 ScrollView 布局
+        updateCurrentTabScrollViewLayout()
+    }
+
+    private func layoutRootViews() {
+        let segmentedSize = segmentedControl.intrinsicContentSize
+        let y = view.bounds.height - 52 - segmentedSize.height
+        segmentedControl.frame = CGRect(
+            x: (view.bounds.width - segmentedSize.width) / 2,
+            y: max(0, y),
+            width: segmentedSize.width,
+            height: segmentedSize.height
+        )
+        let contentTop = segmentedControl.frame.minY - 16
+        contentContainer.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: view.bounds.width,
+            height: max(0, contentTop)
+        )
+    }
+
+    private func layoutCurrentTab() {
+        guard currentTabIndex >= 0, currentTabIndex < tabViews.count else { return }
+        let currentView = tabViews[currentTabIndex]
+        currentView.frame = contentContainer.bounds
+    }
+
+    private func preferredValueWidth(_ text: String, font: NSFont) -> CGFloat {
+        let width = (text as NSString).size(withAttributes: [.font: font]).width
+        return ceil(width + 6)
+    }
+
+    // MARK: - 通用设置
+
+    private func createGeneralView() -> NSView {
+        let scrollView = createScrollView()
+        let stackView = createVerticalStack()
+
+        // 语言设置组
+        let languageGroup = createSettingsGroup(title: L10n.prefs.section.language, icon: "globe")
+        addGroupRow(languageGroup, createLabeledRow(label: L10n.prefs.general.language) {
+            let popup = NSPopUpButton()
+            for language in AppLanguage.allCases {
+                popup.addItem(withTitle: language.nativeName)
+            }
+            let currentIndex = AppLanguage.allCases.firstIndex(of: LocalizationManager.shared.currentLanguage) ?? 0
+            popup.selectItem(at: currentIndex)
+            popup.target = self
+            popup.action = #selector(languageChanged(_:))
+            return popup
+        })
+        addSettingsGroup(languageGroup, to: stackView)
+
+        // 外观设置组
+        let appearanceGroup = createSettingsGroup(title: L10n.prefs.section.appearance, icon: "paintbrush")
+        addGroupRow(appearanceGroup, createLabeledRow(label: L10n.prefs.appearance.backgroundOpacity) {
+            let stack = StackContainerView()
+            stack.axis = .horizontal
+            stack.alignment = .centerY
+            stack.spacing = 8
+
+            let slider = NSSlider(
+                value: UserPreferences.shared.backgroundOpacity,
+                minValue: 0,
+                maxValue: 1,
+                target: self,
+                action: #selector(backgroundOpacityChanged(_:))
+            )
+            slider.setFrameSize(NSSize(width: 200, height: slider.intrinsicContentSize.height))
+            slider.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            stack.addArrangedSubview(slider)
+
+            let valueLabel = FixedSizeTextField(labelWithString: String(
+                format: "%.0f%%",
+                UserPreferences.shared.backgroundOpacity * 100
+            ))
+            valueLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+            valueLabel.tag = 1001 // 用于后续更新
+            valueLabel.preferredWidth = 40
+            stack.addArrangedSubview(valueLabel)
+
+            return stack
+        })
+
+        addGroupRow(appearanceGroup, createCheckboxRow(
+            label: L10n.prefs.appearance.showDeviceBezel,
+            isOn: UserPreferences.shared.showDeviceBezel,
+            action: #selector(showDeviceBezelChanged(_:))
+        ))
+        addGroupRow(appearanceGroup, createCheckboxRow(
+            label: L10n.prefs.appearance.showDeviceCameraOverlay,
+            isOn: UserPreferences.shared.showDeviceCameraOverlay,
+            action: #selector(showDeviceCameraOverlayChanged(_:))
+        ))
+
+        addSettingsGroup(appearanceGroup, to: stackView)
+
+        // 电源管理设置组
+        let powerGroup = createSettingsGroup(title: L10n.prefs.power.sectionTitle, icon: "moon.zzz")
+
+        addGroupRow(powerGroup, createCheckboxRow(
+            label: L10n.prefs.power.preventAutoLock,
+            isOn: UserPreferences.shared.preventAutoLockDuringCapture,
+            action: #selector(preventAutoLockChanged(_:))
+        ))
+        // 添加帮助文本（与帧率备注样式一致）
+        let powerNote = NSTextField(labelWithString: L10n.prefs.power.preventAutoLockHelp)
+        powerNote.font = NSFont.systemFont(ofSize: 11)
+        powerNote.textColor = .secondaryLabelColor
+        let powerNoteContainer = PaddingView(
+            contentView: powerNote,
+            insets: NSEdgeInsets(
+                top: 0,
+                left: 0,
+                bottom: LayoutMetrics.rowVerticalPadding * 1.5,
+                right: 0
+            )
+        )
+        addGroupRow(powerGroup, powerNoteContainer, addDivider: false)
+
+        addSettingsGroup(powerGroup, to: stackView)
+
+        // 颜色补偿设置组
+        let colorCompGroup = createSettingsGroup(
+            title: L10n.prefs.colorCompensationPref.sectionTitle,
+            icon: "paintpalette"
+        )
+
+        // 单行：标签 + 按钮 + 开关
+        addGroupRow(colorCompGroup, createLabeledRow(label: L10n.prefs.colorCompensationPref.enableSwitch) {
+            let container = StackContainerView()
+            container.axis = .horizontal
+            container.alignment = .centerY
+            container.spacing = 8
+
+            let button = NSButton(
+                title: L10n.prefs.colorCompensationPref.openPanel,
+                target: self,
+                action: #selector(self.openColorCompensationPanel(_:))
+            )
+            button.bezelStyle = .rounded
+            container.addArrangedSubview(button)
+
+            let checkbox = NSButton(
+                checkboxWithTitle: "",
+                target: self,
+                action: #selector(self.colorCompensationEnabledChanged(_:))
+            )
+            checkbox.state = ColorProfileManager.shared.isEnabled ? .on : .off
+            checkbox.setContentHuggingPriority(.required, for: .horizontal)
+            checkbox.setContentCompressionResistancePriority(.required, for: .horizontal)
+            container.addArrangedSubview(checkbox)
+
+            return container
+        })
+
+        // 说明文字
+        let colorCompDescContainer = StackContainerView()
+        colorCompDescContainer.axis = .vertical
+        colorCompDescContainer.alignment = .leading
+        colorCompDescContainer.edgeInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        colorCompDescContainer.fillsCrossAxis = true
+
+        let colorCompDescLabel = NSTextField(wrappingLabelWithString: L10n.prefs.colorCompensationPref.description)
+        colorCompDescLabel.font = NSFont.systemFont(ofSize: 11)
+        colorCompDescLabel.textColor = .secondaryLabelColor
+        colorCompDescLabel.isSelectable = false
+        colorCompDescContainer.addArrangedSubview(colorCompDescLabel)
+        addGroupRow(colorCompGroup, colorCompDescContainer, addDivider: false)
+
+        addSettingsGroup(colorCompGroup, to: stackView)
+
+        // 布局设置组
+        let layoutGroup = createSettingsGroup(title: L10n.prefs.section.layout, icon: "rectangle.split.2x1")
+
+        // 布局模式
+        addGroupRow(layoutGroup, createLabeledRow(label: L10n.toolbar.layoutMode) {
+            let segmented = NSSegmentedControl(frame: .zero)
+            segmented.segmentCount = PreviewLayoutMode.allCases.count
+            segmented.trackingMode = .selectOne
+            segmented.segmentStyle = .separated
+
+            for (index, mode) in PreviewLayoutMode.allCases.enumerated() {
+                segmented.setImage(
+                    NSImage(systemSymbolName: mode.iconName, accessibilityDescription: mode.displayName),
+                    forSegment: index
+                )
+                segmented.setToolTip(mode.displayName, forSegment: index)
+                segmented.setWidth(32, forSegment: index)
+            }
+
+            if let index = PreviewLayoutMode.allCases.firstIndex(of: UserPreferences.shared.layoutMode) {
+                segmented.selectedSegment = index
+            }
+            segmented.target = self
+            segmented.action = #selector(layoutModeChanged(_:))
+            return segmented
+        })
+
+        // 网格每页设备数（网格布局模式下生效）
+        addGroupRow(layoutGroup, createLabeledRow(label: L10n.layout.gridPageSize) {
+            let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+            popup.addItem(withTitle: L10n.layout.gridPageSizeAuto)
+            popup.addItem(withTitle: "1")
+            popup.addItem(withTitle: "2")
+            popup.addItem(withTitle: "4")
+            popup.addItem(withTitle: "6")
+            popup.addItem(withTitle: "9")
+            popup.addItem(withTitle: "16")
+            let pref = UserPreferences.shared.gridPageSize
+            popup.selectItem(at: pref == 0 ? 0 : UserPreferences.gridPageSizePresets.firstIndex(of: pref).map { $0 + 1 } ?? 0)
+            popup.target = self
+            popup.action = #selector(gridPageSizeChanged(_:))
+            return popup
+        })
+
+        // 默认设备位置
+        addGroupRow(layoutGroup, createLabeledRow(label: L10n.prefs.layoutPref.devicePosition) {
+            let segmented = NSSegmentedControl(
+                labels: [
+                    L10n.prefs.layoutPref.iosOnLeft,
+                    L10n.prefs.layoutPref.androidOnLeft,
+                ],
+                trackingMode: .selectOne,
+                target: self,
+                action: #selector(devicePositionChanged(_:))
+            )
+            segmented.selectedSegment = UserPreferences.shared.iosOnLeft ? 0 : 1
+            return segmented
+        })
+        // 网格双击聚焦
+        addGroupRow(layoutGroup, createCheckboxRow(
+            label: L10n.prefs.layoutPref.gridDoubleClickFocus,
+            isOn: UserPreferences.shared.gridDoubleClickFocusEnabled,
+            action: #selector(gridDoubleClickFocusChanged(_:))
+        ))
+        addSettingsGroup(layoutGroup, to: stackView)
+
+        setupScrollViewLayout(scrollView: scrollView, contentView: stackView)
+        return scrollView
+    }
+
+    // MARK: - 捕获设置
+
+    private func createCaptureView() -> NSView {
+        let scrollView = createScrollView()
+        let stackView = createVerticalStack()
+
+        // 帧率设置组
+        let frameRateGroup = createSettingsGroup(title: L10n.prefs.section.frameRate, icon: "speedometer")
+        addGroupRow(frameRateGroup, createLabeledRow(label: L10n.prefs.capturePref.frameRate) {
+            let segmented = NSSegmentedControl(
+                labels: ["30 FPS", "60 FPS", "120 FPS"],
+                trackingMode: .selectOne,
+                target: self,
+                action: #selector(frameRateChanged(_:))
+            )
+            switch UserPreferences.shared.captureFrameRate {
+            case 30: segmented.selectedSegment = 0
+            case 60: segmented.selectedSegment = 1
+            default: segmented.selectedSegment = 2
+            }
+            return segmented
+        })
+        let note = NSTextField(labelWithString: L10n.prefs.capturePref.frameRateNote)
+        note.font = NSFont.systemFont(ofSize: 11)
+        note.textColor = .secondaryLabelColor
+        let noteContainer = PaddingView(
+            contentView: note,
+            insets: NSEdgeInsets(
+                top: 0,
+                left: 0,
+                bottom: LayoutMetrics.rowVerticalPadding * 1.5,
+                right: 0
+            )
+        )
+        addGroupRow(frameRateGroup, noteContainer, addDivider: false)
+        addSettingsGroup(frameRateGroup, to: stackView)
+
+        // 窗口外观设置组
+        let windowGroup = createSettingsGroup(title: L10n.prefs.section.window, icon: "macwindow")
+        addGroupRow(windowGroup, createCheckboxRow(
+            label: L10n.prefs.capturePref.autoMinimizeFloating,
+            isOn: UserPreferences.shared.autoMinimizeInFloatingMode,
+            action: #selector(autoMinimizeFloatingChanged(_:)),
+            helpText: L10n.prefs.capturePref.autoMinimizeFloatingNote
+        ), addDivider: false)
+        addSettingsGroup(windowGroup, to: stackView)
+
+        // 投屏画面浮层设置组：只保留帧率与分辨率角标（悬停信息/音量浮层已移除）
+        let overlayGroup = createSettingsGroup(title: L10n.prefs.section.overlay, icon: "rectangle.on.rectangle")
+        addGroupRow(overlayGroup, createCheckboxRow(
+            label: L10n.prefs.capturePref.showInfoStats,
+            isOn: UserPreferences.shared.showCaptureInfoStats,
+            action: #selector(showCaptureInfoStatsChanged(_:))
+        ), addDivider: false)
+        addSettingsGroup(overlayGroup, to: stackView)
+
+        // 设备控制按钮条（独立于信息浮层）
+        let controlBarGroup = createSettingsGroup(title: L10n.prefs.section.controlBar, icon: "button.programmable")
+        addGroupRow(controlBarGroup, createCheckboxRow(
+            label: L10n.prefs.capturePref.showControlBar,
+            isOn: UserPreferences.shared.showDeviceControlBar,
+            action: #selector(showDeviceControlBarChanged(_:)),
+            helpText: L10n.prefs.capturePref.showControlBarNote
+        ), addDivider: false)
+        addSettingsGroup(controlBarGroup, to: stackView)
+
+        // 音频设置组（包含 iOS 和 Android）
+        let audioGroup = createSettingsGroup(title: L10n.prefs.section.audio, icon: "speaker.wave.2.fill")
+
+        // iOS 子标题
+        let iosSubtitle = NSTextField(labelWithString: "iOS")
+        iosSubtitle.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        iosSubtitle.textColor = .secondaryLabelColor
+        let iosSubtitleContainer = PaddingView(
+            contentView: iosSubtitle,
+            insets: NSEdgeInsets(top: LayoutMetrics.rowVerticalPadding, left: 0, bottom: 4, right: 0)
+        )
+        addGroupRow(audioGroup, iosSubtitleContainer, addDivider: false)
+
+        // iOS 启用音频捕获
+        addGroupRow(audioGroup, createAudioEnableCaptureCheckboxRow(
+            isOn: UserPreferences.shared.iosAudioEnabled,
+            action: #selector(iosAudioEnabledChanged(_:))
+        ) { checkbox in
+            checkbox.tag = 4001
+        }, addDivider: false)
+
+        // iOS 音量控制
+        addGroupRow(audioGroup, createLabeledRow(label: L10n.prefs.audioPref.volume) {
+            let stack = StackContainerView()
+            stack.axis = .horizontal
+            stack.alignment = .centerY
+            stack.spacing = 8
+
+            let slider = NSSlider()
+            slider.minValue = 0
+            slider.maxValue = 1
+            slider.doubleValue = Double(UserPreferences.shared.iosAudioVolume)
+            slider.target = self
+            slider.action = #selector(self.iosAudioVolumeChanged(_:))
+            slider.tag = 4002
+            slider.setFrameSize(NSSize(width: 200, height: slider.intrinsicContentSize.height))
+            slider.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            stack.addArrangedSubview(slider)
+
+            let label = FixedSizeTextField(labelWithString: "\(Int(UserPreferences.shared.iosAudioVolume * 100))%")
+            label.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+            label.alignment = .right
+            label.tag = 4003
+            label.preferredWidth = 40
+            stack.addArrangedSubview(label)
+
+            return stack
+        }, addDivider: false)
+
+        // iOS 音频说明
+        let iosAudioNote = NSTextField(labelWithString: L10n.prefs.audioPref.iosNote)
+        iosAudioNote.font = NSFont.systemFont(ofSize: 11)
+        iosAudioNote.textColor = .tertiaryLabelColor
+        let iosAudioNoteContainer = PaddingView(
+            contentView: iosAudioNote,
+            insets: NSEdgeInsets(top: 0, left: 0, bottom: LayoutMetrics.rowVerticalPadding * 1.5, right: 0)
+        )
+        addGroupRow(audioGroup, iosAudioNoteContainer, addDivider: false)
+
+        // Android 子标题
+        let androidSubtitle = NSTextField(labelWithString: "Android")
+        androidSubtitle.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        androidSubtitle.textColor = .secondaryLabelColor
+        let androidSubtitleContainer = PaddingView(
+            contentView: androidSubtitle,
+            insets: NSEdgeInsets(top: LayoutMetrics.rowVerticalPadding, left: 0, bottom: 4, right: 0)
+        )
+        addGroupRow(audioGroup, androidSubtitleContainer)
+
+        // Android 启用音频捕获
+        addGroupRow(audioGroup, createAudioEnableCaptureCheckboxRow(
+            isOn: UserPreferences.shared.androidAudioEnabled,
+            action: #selector(androidAudioEnabledChanged(_:))
+        ) { checkbox in
+            checkbox.tag = 4011
+        }, addDivider: false)
+
+        // Android 音量控制
+        addGroupRow(audioGroup, createLabeledRow(label: L10n.prefs.audioPref.volume) {
+            let stack = StackContainerView()
+            stack.axis = .horizontal
+            stack.alignment = .centerY
+            stack.spacing = 8
+
+            let slider = NSSlider()
+            slider.minValue = 0
+            slider.maxValue = 1
+            slider.doubleValue = Double(UserPreferences.shared.androidAudioVolume)
+            slider.target = self
+            slider.action = #selector(self.androidAudioVolumeChanged(_:))
+            slider.tag = 4012
+            slider.setFrameSize(NSSize(width: 200, height: slider.intrinsicContentSize.height))
+            slider.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            stack.addArrangedSubview(slider)
+
+            let label = FixedSizeTextField(labelWithString: "\(Int(UserPreferences.shared.androidAudioVolume * 100))%")
+            label.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+            label.alignment = .right
+            label.tag = 4013
+            label.preferredWidth = 40
+            stack.addArrangedSubview(label)
+
+            return stack
+        }, addDivider: false)
+
+        // Android 音频编解码器
+        addGroupRow(audioGroup, createLabeledRow(label: L10n.prefs.audioPref.codec) {
+            let popup = NSPopUpButton()
+            popup.addItems(withTitles: ["Opus", "AAC", "Raw"])
+            popup.tag = 4014
+            // 设置当前选中项
+            switch UserPreferences.shared.androidAudioCodec {
+            case .opus: popup.selectItem(at: 0)
+            case .aac: popup.selectItem(at: 1)
+            case .raw: popup.selectItem(at: 2)
+            case .flac: popup.selectItem(at: 0) // FLAC 不支持，回退到 Opus
+            }
+            popup.target = self
+            popup.action = #selector(self.androidAudioCodecChanged(_:))
+            return popup
+        }, addDivider: false)
+
+        // Android 音频说明
+        let androidAudioNote = NSTextField(labelWithString: L10n.prefs.audioPref.androidNote)
+        androidAudioNote.font = NSFont.systemFont(ofSize: 11)
+        androidAudioNote.textColor = .tertiaryLabelColor
+        let androidAudioNoteContainer = PaddingView(
+            contentView: androidAudioNote,
+            insets: NSEdgeInsets(top: 0, left: 0, bottom: LayoutMetrics.rowVerticalPadding * 1.5, right: 0)
+        )
+        addGroupRow(audioGroup, androidAudioNoteContainer, addDivider: false)
+
+        addSettingsGroup(audioGroup, to: stackView)
+
+        // Android (Scrcpy) 设置组
+        let androidGroup = createSettingsGroup(title: L10n.prefs.section.android, icon: "apps.iphone")
+
+        // 码率设置
+        addGroupRow(androidGroup, createLabeledRow(label: L10n.prefs.scrcpyPref.bitrate) {
+            let popup = NSPopUpButton()
+            popup.addItems(withTitles: [
+                L10n.prefs.scrcpyPref.mbps(4),
+                L10n.prefs.scrcpyPref.mbps(8),
+                L10n.prefs.scrcpyPref.mbps(16),
+                L10n.prefs.scrcpyPref.mbps(32),
+            ])
+            switch UserPreferences.shared.scrcpyBitrate {
+            case 4: popup.selectItem(at: 0)
+            case 8: popup.selectItem(at: 1)
+            case 16: popup.selectItem(at: 2)
+            default: popup.selectItem(at: 3)
+            }
+            popup.target = self
+            popup.action = #selector(scrcpyBitrateChanged(_:))
+            return popup
+        })
+
+        // 最大分辨率
+        addGroupRow(androidGroup, createLabeledRow(label: L10n.prefs.scrcpyPref.maxSize) {
+            let popup = NSPopUpButton()
+            popup.addItems(withTitles: [
+                L10n.prefs.scrcpyPref.noLimit,
+                L10n.prefs.scrcpyPref.pixels(1280),
+                L10n.prefs.scrcpyPref.pixels(1920),
+                L10n.prefs.scrcpyPref.pixels(2560),
+            ])
+            switch UserPreferences.shared.scrcpyMaxSize {
+            case 0: popup.selectItem(at: 0)
+            case 1280: popup.selectItem(at: 1)
+            case 1920: popup.selectItem(at: 2)
+            default: popup.selectItem(at: 3)
+            }
+            popup.target = self
+            popup.action = #selector(scrcpyMaxSizeChanged(_:))
+            return popup
+        })
+
+        // 最大尺寸说明
+        let maxSizeNote = NSTextField(labelWithString: L10n.prefs.scrcpyPref.maxSizeNote)
+        maxSizeNote.font = NSFont.systemFont(ofSize: 11)
+        maxSizeNote.textColor = .secondaryLabelColor
+        let maxSizeNoteContainer = PaddingView(
+            contentView: maxSizeNote,
+            insets: NSEdgeInsets(
+                top: -4,
+                left: 0,
+                bottom: 10,
+                right: 0
+            )
+        )
+        addGroupRow(androidGroup, maxSizeNoteContainer, addDivider: false)
+
+        // 显示触摸点
+        addGroupRow(androidGroup, createCheckboxRow(
+            label: L10n.prefs.scrcpyPref.showTouches,
+            isOn: UserPreferences.shared.scrcpyShowTouches,
+            action: #selector(scrcpyShowTouchesChanged(_:))
+        ))
+
+        // 端口范围（仿照 scrcpy 的 --port 参数）
+        addGroupRow(androidGroup, createLabeledRow(label: L10n.prefs.scrcpyPref.portRange) {
+            let stack = StackContainerView()
+            stack.axis = .horizontal
+            stack.alignment = .centerY
+            stack.spacing = 8
+
+            // 起始端口
+            let startTextField = FixedSizeTextField()
+            startTextField.stringValue = String(UserPreferences.shared.scrcpyPortRangeStart)
+            startTextField.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+            startTextField.alignment = .center
+            startTextField.preferredWidth = 70
+            startTextField.target = self
+            startTextField.action = #selector(scrcpyPortRangeStartChanged(_:))
+            startTextField.tag = 3001
+            stack.addArrangedSubview(startTextField)
+
+            // 分隔符 "-"
+            let separatorLabel = NSTextField(labelWithString: "-")
+            separatorLabel.font = NSFont.systemFont(ofSize: 13)
+            stack.addArrangedSubview(separatorLabel)
+
+            // 结束端口
+            let endTextField = FixedSizeTextField()
+            endTextField.stringValue = String(UserPreferences.shared.scrcpyPortRangeEnd)
+            endTextField.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+            endTextField.alignment = .center
+            endTextField.preferredWidth = 70
+            endTextField.target = self
+            endTextField.action = #selector(scrcpyPortRangeEndChanged(_:))
+            endTextField.tag = 3002
+            stack.addArrangedSubview(endTextField)
+
+            return stack
+        })
+
+        // 视频编解码器
+        addGroupRow(androidGroup, createLabeledRow(label: L10n.prefs.scrcpyPref.codec) {
+            let popup = NSPopUpButton()
+            for codec in ScrcpyCodecType.allCases {
+                popup.addItem(withTitle: codec.displayName)
+            }
+            let currentIndex = ScrcpyCodecType.allCases.firstIndex(of: UserPreferences.shared.scrcpyCodec) ?? 0
+            popup.selectItem(at: currentIndex)
+            popup.target = self
+            popup.action = #selector(scrcpyCodecChanged(_:))
+            return popup
+        }, addDivider: true)
+
+        // 鼠标/键盘控制
+        addGroupRow(androidGroup, createCheckboxRow(
+            label: L10n.prefs.scrcpyPref.controlEnabled,
+            isOn: UserPreferences.shared.androidControlEnabled,
+            action: #selector(androidControlEnabledChanged(_:))
+        ))
+
+        // 控制说明
+        let controlNote = NSTextField(wrappingLabelWithString: L10n.prefs.scrcpyPref.controlNote)
+        controlNote.font = NSFont.systemFont(ofSize: 11)
+        controlNote.textColor = .secondaryLabelColor
+        controlNote.lineBreakMode = .byWordWrapping
+        controlNote.maximumNumberOfLines = 0
+        let controlNoteContainer = PaddingView(
+            contentView: controlNote,
+            insets: NSEdgeInsets(top: -4, left: 0, bottom: 10, right: 0)
+        )
+        addGroupRow(androidGroup, controlNoteContainer, addDivider: false)
+
+        // 输入模式
+        addGroupRow(androidGroup, createLabeledRow(label: L10n.prefs.scrcpyPref.controlMode) {
+            let popup = NSPopUpButton()
+            for mode in ScrcpyInputMode.allCases {
+                popup.addItem(withTitle: mode.displayName)
+            }
+            let currentIndex = ScrcpyInputMode.allCases.firstIndex(of: UserPreferences.shared.androidControlMode) ?? 0
+            popup.selectItem(at: currentIndex)
+            popup.target = self
+            popup.action = #selector(androidControlModeChanged(_:))
+            return popup
+        })
+
+        // 鼠标悬停
+        addGroupRow(androidGroup, createCheckboxRow(
+            label: L10n.prefs.scrcpyPref.controlHover,
+            isOn: UserPreferences.shared.androidControlHover,
+            action: #selector(androidControlHoverChanged(_:))
+        ))
+
+        // 生效提示（需重新开始投屏）
+        let controlRestartNote = NSTextField(wrappingLabelWithString: L10n.prefs.scrcpyPref.controlRestartNote)
+        controlRestartNote.font = NSFont.systemFont(ofSize: 11)
+        controlRestartNote.textColor = .systemOrange
+        controlRestartNote.lineBreakMode = .byWordWrapping
+        controlRestartNote.maximumNumberOfLines = 0
+        let controlRestartContainer = PaddingView(
+            contentView: controlRestartNote,
+            insets: NSEdgeInsets(top: -4, left: 0, bottom: 10, right: 0)
+        )
+        // 最后一行不再追加分隔线，否则分组底部会多出一条悬空横线
+        addGroupRow(androidGroup, controlRestartContainer, addDivider: false)
+
+        addSettingsGroup(androidGroup, to: stackView)
+
+        setupScrollViewLayout(scrollView: scrollView, contentView: stackView)
+        return scrollView
+    }
+
+    // MARK: - 权限设置
+
+    // MARK: - 投屏录制分页
+
+    /// 录制保存位置路径标签的 tag，供选择/重置后回填。
+    private static let recordingPathLabelTag = 4601
+    /// 截图间隔可选档位（秒）。受整秒时间轴约束，最小 1s。
+
+    private func createRecordingView() -> NSView {
+        let scrollView = createScrollView()
+        let stackView = createVerticalStack()
+
+        // 保存位置组
+        let outputGroup = createSettingsGroup(title: L10n.prefs.section.recordingOutput, icon: "folder")
+        addGroupRow(outputGroup, createLabeledRow(label: L10n.prefs.recording.saveLocation) {
+            let row = StackContainerView()
+            row.axis = .horizontal
+            row.alignment = .centerY
+            row.spacing = 8
+
+            let pathLabel = FixedSizeTextField(labelWithString: self.recordingSaveLocationDisplayPath())
+            pathLabel.font = NSFont.systemFont(ofSize: 12)
+            pathLabel.textColor = .secondaryLabelColor
+            pathLabel.lineBreakMode = .byTruncatingMiddle
+            pathLabel.tag = Self.recordingPathLabelTag
+            row.addArrangedSubview(pathLabel)
+
+            let chooseButton = NSButton(
+                title: L10n.prefs.recording.chooseFolder,
+                target: self,
+                action: #selector(self.chooseRecordingFolder(_:))
+            )
+            chooseButton.bezelStyle = .rounded
+            chooseButton.setContentHuggingPriority(.required, for: .horizontal)
+            row.addArrangedSubview(chooseButton)
+
+            let resetButton = NSButton(
+                title: L10n.prefs.recording.resetToDefault,
+                target: self,
+                action: #selector(self.resetRecordingFolder(_:))
+            )
+            resetButton.bezelStyle = .rounded
+            resetButton.setContentHuggingPriority(.required, for: .horizontal)
+            row.addArrangedSubview(resetButton)
+            return row
+        })
+        addGroupRow(outputGroup, self.recordingNote(L10n.prefs.recording.saveLocationNote), addDivider: false)
+        addSettingsGroup(outputGroup, to: stackView)
+
+        addRecordingAudioGroup(to: stackView)
+
+        setupScrollViewLayout(scrollView: scrollView, contentView: stackView)
+        return scrollView
+    }
+
+    /// 音频组：麦克风录制开关。
+    private func addRecordingAudioGroup(to stackView: StackContainerView) {
+        let group = createSettingsGroup(title: L10n.prefs.section.recordingAudio, icon: "mic")
+        addGroupRow(group, createCheckboxRow(
+            label: L10n.prefs.recording.enableMicrophone,
+            isOn: UserPreferences.shared.recordingMicrophoneEnabled,
+            action: #selector(recordingMicrophoneToggled(_:))
+        ), addDivider: false)
+        // 说明行独立成行，带底部内边距，与截图组保持一致。
+        addGroupRow(group, self.recordingNote(L10n.prefs.recording.enableMicrophoneNote), addDivider: false)
+        addSettingsGroup(group, to: stackView)
+    }
+
+    /// 灰色小字说明行，复用帧率说明的边距样式。
+    private func recordingNote(_ text: String) -> NSView {
+        let note = NSTextField(wrappingLabelWithString: text)
+        note.font = NSFont.systemFont(ofSize: 11)
+        note.textColor = .secondaryLabelColor
+        return PaddingView(
+            contentView: note,
+            insets: NSEdgeInsets(top: 0, left: 0, bottom: LayoutMetrics.rowVerticalPadding * 1.5, right: 0)
+        )
+    }
+
+    private func createPermissionsView() -> NSView {
+        let scrollView = createScrollView()
+        let stackView = createVerticalStack()
+
+        // 系统权限组（录制用麦克风，跨平台）
+        let systemPermGroup = createSettingsGroup(title: L10n.prefs.section.systemPermissions, icon: "mic")
+        addGroupRow(systemPermGroup, createPermissionRow(
+            name: L10n.permission.microphoneName,
+            description: L10n.permission.microphoneDesc,
+            permissionType: .microphone
+        ), addDivider: false)
+        // 麦克风由独立 Helper 申请，说明清楚避免用户在主 App 里找不到
+        addGroupRow(systemPermGroup, recordingNote(L10n.permission.microphoneHelperNote), addDivider: false)
+        addSettingsGroup(systemPermGroup, to: stackView)
+
+        // iOS 权限组
+        let iosPermGroup = createSettingsGroup(title: L10n.prefs.section.iosPermissions, icon: "apple.logo")
+        addGroupRow(iosPermGroup, createPermissionRow(
+            name: L10n.permission.cameraName,
+            description: L10n.permission.cameraDesc,
+            permissionType: .camera
+        ), addDivider: false)
+        addSettingsGroup(iosPermGroup, to: stackView)
+
+        // 权限管理说明
+        let permNoteLabel = NSTextField(wrappingLabelWithString: L10n.permission.revokeNote)
+        permNoteLabel.font = NSFont.systemFont(ofSize: 11)
+        permNoteLabel.textColor = .secondaryLabelColor
+        stackView.addArrangedSubview(permNoteLabel)
+
+        // Android 工具链组
+        let toolchainGroup = createSettingsGroup(
+            title: L10n.prefs.section.androidToolchain,
+            icon: "wrench.and.screwdriver"
+        )
+
+        let adbRow = createToolchainRowWithPath(
+            name: "adb",
+            description: L10n.prefs.toolchain.adbDesc,
+            toolType: .adb
+        )
+        toolchainGroup.addArrangedSubview(adbRow)
+
+        let divider1 = NSBox()
+        divider1.boxType = .separator
+        toolchainGroup.addArrangedSubview(divider1)
+
+        let scrcpyServerRow = createToolchainRowWithPath(
+            name: "scrcpy-server",
+            description: L10n.prefs.toolchain.scrcpyServerDesc,
+            toolType: .scrcpyServer
+        )
+        toolchainGroup.addArrangedSubview(scrcpyServerRow)
+
+        addSettingsGroup(toolchainGroup, to: stackView)
+
+        // 刷新按钮
+        let refreshButton = NSButton(
+            title: L10n.prefs.toolchain.refreshStatus,
+            target: self,
+            action: #selector(refreshToolchain)
+        )
+        refreshButton.bezelStyle = .rounded
+        refreshButton.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
+        refreshButton.imagePosition = .imageLeading
+        let buttonContainer = StackContainerView()
+        buttonContainer.axis = .horizontal
+        buttonContainer.alignment = .centerY
+        buttonContainer.fillsCrossAxis = true
+        buttonContainer.addArrangedSubview(FlexibleSpacerView())
+        buttonContainer.addArrangedSubview(refreshButton)
+        stackView.addArrangedSubview(buttonContainer)
+
+        setupScrollViewLayout(scrollView: scrollView, contentView: stackView)
+        return scrollView
+    }
+
+    // MARK: - 辅助方法
+
+    private func createScrollView() -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.drawsBackground = false
+        // 使用 flipped 的 documentView，让内容从顶部开始排列
+        scrollView.documentView = FlippedView()
+        return scrollView
+    }
+
+    private func createVerticalStack() -> StackContainerView {
+        let stack = StackContainerView()
+        stack.axis = .vertical
+        stack.alignment = .leading
+        stack.spacing = 16
+        stack.edgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        stack.fillsCrossAxis = true
+        return stack
+    }
+
+    private func setupScrollViewLayout(scrollView: NSScrollView, contentView: StackContainerView) {
+        guard let documentView = scrollView.documentView else { return }
+
+        // 将 stackView 添加到 documentView（FlippedView）中
+        documentView.addSubview(contentView)
+        registerScrollViewLayout(scrollView: scrollView, contentView: contentView)
+        updateScrollViewLayout(scrollView: scrollView, contentView: contentView)
+    }
+
+    private func registerScrollViewLayout(scrollView: NSScrollView, contentView: StackContainerView) {
+        if scrollViewLayouts.contains(where: { $0.0 === scrollView }) {
+            return
+        }
+        scrollViewLayouts.append((scrollView, contentView))
+    }
+
+    private func updateScrollViewLayouts() {
+        for (scrollView, contentView) in scrollViewLayouts {
+            updateScrollViewLayout(scrollView: scrollView, contentView: contentView)
+        }
+    }
+
+    /// 只更新当前显示的 Tab 的 ScrollView 布局
+    private func updateCurrentTabScrollViewLayout() {
+        guard currentTabIndex >= 0, currentTabIndex < tabViews.count else { return }
+        let currentView = tabViews[currentTabIndex]
+
+        // 查找当前 Tab 内的 ScrollView
+        for (scrollView, contentView) in scrollViewLayouts {
+            if isDescendant(scrollView, of: currentView) {
+                updateScrollViewLayout(scrollView: scrollView, contentView: contentView)
+            }
+        }
+    }
+
+    /// 检查视图是否是另一个视图的子视图
+    private func isDescendant(_ view: NSView, of ancestor: NSView) -> Bool {
+        var current: NSView? = view
+        while let parent = current {
+            if parent === ancestor {
+                return true
+            }
+            current = parent.superview
+        }
+        return false
+    }
+
+    private func updateScrollViewLayout(scrollView: NSScrollView, contentView: StackContainerView) {
+        guard let documentView = scrollView.documentView else { return }
+        let contentWidth = scrollView.contentView.bounds.width
+        let size = contentView.requiredSize(for: contentWidth)
+        documentView.frame = CGRect(x: 0, y: 0, width: contentWidth, height: size.height)
+        contentView.frame = documentView.bounds
+        contentView.layoutSubtreeIfNeeded()
+    }
+
+    /// 创建设置分组，返回内容容器（contentBox）
+    /// 注意：groupStack 会通过 contentBox.superview 访问
+    private func createSettingsGroup(title: String, icon: String) -> StackContainerView {
+        let groupStack = StackContainerView()
+        groupStack.axis = .vertical
+        groupStack.alignment = .leading
+        groupStack.spacing = 8
+
+        // 标题行
+        let titleStack = StackContainerView()
+        titleStack.axis = .horizontal
+        titleStack.alignment = .centerY
+        titleStack.spacing = 6
+        titleStack.fillsCrossAxis = true
+        let iconView = NSImageView()
+        let iconConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        iconView.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)?
+            .withSymbolConfiguration(iconConfig)
+        iconView.contentTintColor = .labelColor
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        // 使用 frame 设置固定大小，避免约束冲突
+        iconView.setFrameSize(NSSize(width: 18, height: 18))
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+        iconView.setContentHuggingPriority(.required, for: .vertical)
+        titleStack.addArrangedSubview(iconView)
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        titleLabel.lineBreakMode = .byWordWrapping
+        titleLabel.maximumNumberOfLines = 2
+        titleLabel.usesSingleLineMode = false
+        titleLabel.cell?.wraps = true
+        titleLabel.cell?.isScrollable = false
+        titleStack.addArrangedSubview(titleLabel)
+        titleStack.setFlexible(titleLabel, isFlexible: true)
+        groupStack.addArrangedSubview(titleStack)
+
+        // 内容容器
+        let contentBox = StackContainerView()
+        contentBox.axis = .vertical
+        contentBox.alignment = .leading
+        contentBox.spacing = 0
+        contentBox.fillsCrossAxis = true
+        contentBox.wantsLayer = true
+        // 使用半透明的颜色来区分卡片和背景
+        contentBox.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.05).cgColor
+        contentBox.layer?.cornerRadius = 8
+        contentBox.edgeInsets = NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        groupStack.addArrangedSubview(contentBox)
+
+        return contentBox
+    }
+
+    /// 将设置分组添加到父 stackView，并设置宽度约束
+    private func addSettingsGroup(_ contentBox: StackContainerView, to parentStack: StackContainerView) {
+        guard let groupStack = contentBox.superview as? StackContainerView else { return }
+        groupStack.fillsCrossAxis = true
+        parentStack.addArrangedSubview(groupStack)
+    }
+
+    private func createLabeledRow(label: String, controlBuilder: () -> NSView) -> NSView {
+        let labelView = NSTextField(labelWithString: label)
+        labelView.font = NSFont.systemFont(ofSize: 13)
+        labelView.lineBreakMode = .byWordWrapping
+        labelView.maximumNumberOfLines = 0
+        labelView.usesSingleLineMode = false
+        labelView.cell?.wraps = true
+        labelView.cell?.isScrollable = false
+        labelView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        labelView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let control = controlBuilder()
+        control.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+        return LabeledRowView(label: labelView, control: control)
+    }
+
+    private func addGroupRow(_ contentBox: StackContainerView, _ row: NSView, addDivider: Bool = true) {
+        if addDivider, !contentBox.arrangedSubviews.isEmpty {
+            let divider = NSBox()
+            divider.boxType = .separator
+            divider.setFrameSize(NSSize(width: 0, height: 1))
+            contentBox.addArrangedSubview(divider)
+        }
+        contentBox.addArrangedSubview(row)
+    }
+
+    private func createCheckboxRow(
+        label: String,
+        isOn: Bool,
+        action: Selector,
+        helpText: String? = nil,
+        configure: ((NSButton) -> Void)? = nil
+    ) -> NSView {
+        if let helpText {
+            // 带帮助文本的版本
+            let container = StackContainerView()
+            container.axis = .vertical
+            container.alignment = .leading
+            container.spacing = 4
+
+            let row = createLabeledRow(label: label) {
+                let checkbox = NSButton(checkboxWithTitle: "", target: self, action: action)
+                checkbox.state = isOn ? .on : .off
+                checkbox.setContentHuggingPriority(.required, for: .horizontal)
+                checkbox.setContentCompressionResistancePriority(.required, for: .horizontal)
+                configure?(checkbox)
+                return checkbox
+            }
+            container.addArrangedSubview(row)
+
+            let helpLabel = NSTextField(wrappingLabelWithString: helpText)
+            helpLabel.font = NSFont.systemFont(ofSize: 11)
+            helpLabel.textColor = .secondaryLabelColor
+            // 说明文字下方留出内边距，避免紧随其后的分隔线贴着文字
+            container.addArrangedSubview(PaddingView(
+                contentView: helpLabel,
+                insets: NSEdgeInsets(top: 0, left: 0, bottom: LayoutMetrics.rowVerticalPadding, right: 0)
+            ))
+
+            return container
+        } else {
+            // 原有版本
+            return createLabeledRow(label: label) {
+                let checkbox = NSButton(checkboxWithTitle: "", target: self, action: action)
+                checkbox.state = isOn ? .on : .off
+                checkbox.setContentHuggingPriority(.required, for: .horizontal)
+                checkbox.setContentCompressionResistancePriority(.required, for: .horizontal)
+                configure?(checkbox)
+                return checkbox
+            }
+        }
+    }
+
+    private func createAudioEnableCaptureCheckboxRow(
+        isOn: Bool,
+        action: Selector,
+        configure: ((NSButton) -> Void)? = nil
+    ) -> NSView {
+        let baseText = L10n.prefs.audioPref.enableCapture
+        let hintText = L10n.prefs.audioPref.enableCaptureRestartHint
+        let fullText = "\(baseText) \(hintText)"
+
+        let labelView = NSTextField(labelWithString: "")
+        labelView.font = NSFont.systemFont(ofSize: 13)
+        labelView.lineBreakMode = .byWordWrapping
+        labelView.maximumNumberOfLines = 0
+        labelView.usesSingleLineMode = false
+        labelView.cell?.wraps = true
+        labelView.cell?.isScrollable = false
+        labelView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        labelView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let attributed = NSMutableAttributedString(
+            string: fullText,
+            attributes: [
+                .font: NSFont.systemFont(ofSize: 13),
+                .foregroundColor: NSColor.labelColor,
+            ]
+        )
+        let hintRange = (fullText as NSString).range(of: hintText)
+        if hintRange.location != NSNotFound {
+            attributed.addAttribute(.foregroundColor, value: NSColor.systemYellow, range: hintRange)
+        }
+        labelView.attributedStringValue = attributed
+
+        let checkbox = NSButton(checkboxWithTitle: "", target: self, action: action)
+        checkbox.state = isOn ? .on : .off
+        checkbox.setContentHuggingPriority(.required, for: .horizontal)
+        checkbox.setContentCompressionResistancePriority(.required, for: .horizontal)
+        configure?(checkbox)
+
+        // 右侧：勾选框 + 「立即重启」按钮，让用户不用自己去退出重开
+        let controlStack = StackContainerView()
+        controlStack.axis = .horizontal
+        controlStack.alignment = .centerY
+        controlStack.spacing = 8
+        controlStack.addArrangedSubview(restartAppButton())
+        controlStack.addArrangedSubview(checkbox)
+
+        return LabeledRowView(label: labelView, control: controlStack)
+    }
+
+    /// 「立即重启」按钮（用于音频开关等需要重启生效的设置）
+    private func restartAppButton() -> NSButton {
+        let button = NSButton(
+            title: L10n.prefs.audioPref.restartNow,
+            target: self,
+            action: #selector(restartApplication(_:))
+        )
+        button.bezelStyle = .rounded
+        button.controlSize = .small
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.toolTip = L10n.prefs.audioPref.restartNowHint
+        return button
+    }
+
+    private func createButtonRow(label: String, action: Selector) -> NSView {
+        let container = StackContainerView()
+        container.axis = .horizontal
+        container.alignment = .centerY
+        container.spacing = 8
+        container.edgeInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+
+        let button = NSButton(title: label, target: self, action: action)
+        button.bezelStyle = .rounded
+        container.addArrangedSubview(button)
+
+        return container
+    }
+
+    private func createToolchainRowWithPath(name: String, description: String, toolType: ToolType) -> NSView {
+        let containerStack = StackContainerView()
+        containerStack.axis = .vertical
+        containerStack.alignment = .leading
+        containerStack.spacing = 0
+        containerStack.fillsCrossAxis = true
+
+        // 第一行：状态显示（使用 LabeledRowView 布局）
+        // 左侧：状态图标 + 名称和描述
+        let leftStack = StackContainerView()
+        leftStack.axis = .horizontal
+        leftStack.alignment = .top
+        leftStack.spacing = 8
+
+        // 状态图标
+        let statusIcon = NSImageView()
+        statusIcon.image = NSImage(systemSymbolName: "circle", accessibilityDescription: nil)
+        statusIcon.contentTintColor = .secondaryLabelColor
+        statusIcon.setFrameSize(NSSize(width: 18, height: 18))
+        leftStack.addArrangedSubview(statusIcon)
+
+        // 名称和描述
+        let infoStack = StackContainerView()
+        infoStack.axis = .vertical
+        infoStack.alignment = .leading
+        infoStack.spacing = 4
+        let nameLabel = NSTextField(labelWithString: name)
+        nameLabel.font = NSFont.systemFont(ofSize: 13)
+        infoStack.addArrangedSubview(nameLabel)
+        let descLabel = NSTextField(wrappingLabelWithString: description)
+        descLabel.font = NSFont.systemFont(ofSize: 11)
+        descLabel.textColor = .secondaryLabelColor
+        infoStack.addArrangedSubview(descLabel)
+        leftStack.addArrangedSubview(infoStack)
+
+        // 右侧：状态文本
+        let statusLabel = NSTextField(labelWithString: L10n.common.checking)
+        statusLabel.font = NSFont.systemFont(ofSize: 11)
+        statusLabel.textColor = .secondaryLabelColor
+        statusLabel.alignment = .right
+
+        let statusRow = LabeledRowView(labelView: leftStack, control: statusLabel)
+        containerStack.addArrangedSubview(statusRow)
+
+        // 第二行：自定义路径
+        let customPathRow = createCheckboxRow(
+            label: L10n.prefs.toolchain.useCustomPath,
+            isOn: useCustomPathForToolType(toolType),
+            action: #selector(useCustomPathChanged(_:))
+        ) { checkbox in
+            checkbox.tag = self.tagForToolType(toolType, base: 4001)
+        }
+        containerStack.addArrangedSubview(customPathRow)
+
+        // 第三行：路径输入（仅在启用自定义路径时显示）
+        let pathInputStack = StackContainerView()
+        pathInputStack.axis = .horizontal
+        pathInputStack.alignment = .centerY
+        pathInputStack.spacing = 8
+
+        let pathTextField = FixedSizeTextField()
+        pathTextField.placeholderString = L10n.prefs.toolchain.pathPlaceholder
+        pathTextField.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        pathTextField.tag = tagForToolType(toolType, base: 4011)
+        pathTextField.stringValue = customPathForToolType(toolType) ?? ""
+        pathTextField.target = self
+        pathTextField.action = #selector(customPathChanged(_:))
+        pathInputStack.addArrangedSubview(pathTextField)
+        pathTextField.preferredWidth = 200
+
+        // 浏览按钮
+        let browseButton = NSButton(
+            title: L10n.prefs.toolchain.browse,
+            target: self,
+            action: #selector(browseToolPath(_:))
+        )
+        browseButton.bezelStyle = .rounded
+        browseButton.controlSize = .small
+        browseButton.tag = tagForToolType(toolType, base: 4021)
+        pathInputStack.addArrangedSubview(browseButton)
+
+        // 清空按钮
+        let clearButton = NSButton(
+            image: NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: nil)!,
+            target: self,
+            action: #selector(clearToolPath(_:))
+        )
+        clearButton.bezelStyle = .regularSquare
+        clearButton.isBordered = false
+        clearButton.tag = tagForToolType(toolType, base: 4051)
+        pathInputStack.addArrangedSubview(clearButton)
+
+        // 验证图标
+        let validationIcon = NSImageView()
+        validationIcon.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
+        validationIcon.contentTintColor = .secondaryLabelColor
+        validationIcon.tag = tagForToolType(toolType, base: 4031)
+        validationIcon.setFrameSize(NSSize(width: 16, height: 16))
+        pathInputStack.addArrangedSubview(validationIcon)
+
+        // 使用 PaddingView 包装路径输入行，保持左对齐
+        let pathInputRow = PaddingView(
+            contentView: pathInputStack,
+            insets: NSEdgeInsets(
+                top: LayoutMetrics.rowVerticalPadding,
+                left: 0,
+                bottom: LayoutMetrics.rowVerticalPadding,
+                right: 0
+            )
+        )
+        pathInputRow.tag = tagForToolType(toolType, base: 4041)
+        pathInputRow.isHidden = !useCustomPathForToolType(toolType)
+        containerStack.addArrangedSubview(pathInputRow)
+
+        // 更新状态
+        Task { @MainActor in
+            let toolchain = AppState.shared.toolchainManager
+            let status: ToolchainStatus
+            let version: String
+
+            switch toolType {
+            case .adb:
+                status = toolchain.adbStatus
+                version = toolchain.adbVersionDescription
+            case .scrcpyServer:
+                // scrcpy-server 显示版本号
+                if toolchain.scrcpyServerPath != nil {
+                    statusIcon.image = NSImage(
+                        systemSymbolName: "checkmark.circle.fill",
+                        accessibilityDescription: nil
+                    )
+                    statusIcon.contentTintColor = .systemGreen
+                    // 显示版本号
+                    statusLabel.stringValue = L10n.prefs.toolchain.bundled("4.0")
+                    statusLabel.textColor = .systemGreen
+                } else {
+                    statusIcon.image = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil)
+                    statusIcon.contentTintColor = .systemOrange
+                    statusLabel.stringValue = L10n.prefs.toolchain.notInstalled
+                    statusLabel.textColor = .systemOrange
+                }
+                updatePathValidation(toolType: toolType, validationIcon: validationIcon)
+                return
+            }
+
+            switch status {
+            case .installed:
+                statusIcon.image = NSImage(
+                    systemSymbolName: "checkmark.circle.fill",
+                    accessibilityDescription: nil
+                )
+                statusIcon.contentTintColor = .systemGreen
+                statusLabel.stringValue = version
+                statusLabel.textColor = .systemGreen
+            case .notInstalled:
+                statusIcon.image = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil)
+                statusIcon.contentTintColor = .systemOrange
+                statusLabel.stringValue = L10n.prefs.toolchain.notInstalled
+                statusLabel.textColor = .systemOrange
+            case .installing:
+                statusIcon.image = NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil)
+                statusIcon.contentTintColor = .appAccent
+                statusLabel.stringValue = L10n.common.checking
+            case let .error(message):
+                statusIcon.image = NSImage(
+                    systemSymbolName: "exclamationmark.circle.fill",
+                    accessibilityDescription: nil
+                )
+                statusIcon.contentTintColor = .systemRed
+                statusLabel.stringValue = message
+                statusLabel.textColor = .systemRed
+            }
+
+            // 验证自定义路径
+            updatePathValidation(toolType: toolType, validationIcon: validationIcon)
+        }
+
+        return containerStack
+    }
+
+    // MARK: - ToolType 辅助方法
+
+    private func tagForToolType(_ toolType: ToolType, base: Int) -> Int {
+        switch toolType {
+        case .adb: base
+        case .scrcpyServer: base + 1
+        }
+    }
+
+    private func useCustomPathForToolType(_ toolType: ToolType) -> Bool {
+        switch toolType {
+        case .adb: UserPreferences.shared.useCustomAdbPath
+        case .scrcpyServer: UserPreferences.shared.useCustomScrcpyServerPath
+        }
+    }
+
+    private func customPathForToolType(_ toolType: ToolType) -> String? {
+        switch toolType {
+        case .adb: UserPreferences.shared.customAdbPath
+        case .scrcpyServer: UserPreferences.shared.customScrcpyServerPath
+        }
+    }
+
+    private func toolTypeFromTag(_ tag: Int) -> ToolType? {
+        let offset = tag % 10
+        switch offset {
+        case 1: return .adb
+        case 2: return .scrcpyServer
+        default: return nil
+        }
+    }
+
+    private func updatePathValidation(toolType: ToolType, validationIcon: NSImageView) {
+        let useCustom = useCustomPathForToolType(toolType)
+        let customPath = customPathForToolType(toolType)
+
+        guard useCustom, let path = customPath, !path.isEmpty else {
+            validationIcon.image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
+            validationIcon.contentTintColor = .secondaryLabelColor
+            validationIcon.toolTip = nil
+            return
+        }
+
+        // 检查文件是否存在
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+        let exists = fileManager.fileExists(atPath: path, isDirectory: &isDirectory)
+
+        // scrcpy-server 不需要检查可执行权限，它是 DEX 文件
+        if toolType == .scrcpyServer {
+            if exists, !isDirectory.boolValue {
+                validationIcon.image = NSImage(
+                    systemSymbolName: "checkmark.circle.fill",
+                    accessibilityDescription: nil
+                )
+                validationIcon.contentTintColor = .systemGreen
+                validationIcon.toolTip = L10n.prefs.toolchain.pathValid
+            } else if !exists {
+                validationIcon.image = NSImage(
+                    systemSymbolName: "xmark.circle.fill",
+                    accessibilityDescription: nil
+                )
+                validationIcon.contentTintColor = .systemRed
+                validationIcon.toolTip = L10n.prefs.toolchain.pathNotFound
+            } else {
+                validationIcon.image = NSImage(
+                    systemSymbolName: "xmark.circle.fill",
+                    accessibilityDescription: nil
+                )
+                validationIcon.contentTintColor = .systemRed
+                validationIcon.toolTip = L10n.prefs.toolchain.pathIsDirectory
+            }
+            return
+        }
+
+        // adb 和 scrcpy 需要检查可执行权限
+        let isExecutable = fileManager.isExecutableFile(atPath: path)
+
+        if exists, !isDirectory.boolValue, isExecutable {
+            validationIcon.image = NSImage(
+                systemSymbolName: "checkmark.circle.fill",
+                accessibilityDescription: nil
+            )
+            validationIcon.contentTintColor = .systemGreen
+            validationIcon.toolTip = L10n.prefs.toolchain.pathValid
+        } else if !exists {
+            validationIcon.image = NSImage(
+                systemSymbolName: "xmark.circle.fill",
+                accessibilityDescription: nil
+            )
+            validationIcon.contentTintColor = .systemRed
+            validationIcon.toolTip = L10n.prefs.toolchain.pathNotFound
+        } else if isDirectory.boolValue {
+            validationIcon.image = NSImage(
+                systemSymbolName: "xmark.circle.fill",
+                accessibilityDescription: nil
+            )
+            validationIcon.contentTintColor = .systemRed
+            validationIcon.toolTip = L10n.prefs.toolchain.pathIsDirectory
+        } else {
+            validationIcon.image = NSImage(
+                systemSymbolName: "exclamationmark.circle.fill",
+                accessibilityDescription: nil
+            )
+            validationIcon.contentTintColor = .systemOrange
+            validationIcon.toolTip = L10n.prefs.toolchain.pathNotExecutable
+        }
+    }
+
+    private enum PermissionType {
+        case camera
+        case microphone
+
+        /// 「打开系统设置」按钮的 tag，也用于反查类型。
+        var openButtonTag: Int {
+            switch self {
+            case .camera: 1
+            case .microphone: 2
+            }
+        }
+
+        /// 「撤销」按钮的 tag。
+        var revokeButtonTag: Int {
+            switch self {
+            case .camera: 11
+            case .microphone: 12
+            }
+        }
+
+        /// 系统隐私设置的锚点 URL。
+        var systemPreferencesURL: String {
+            switch self {
+            case .camera:
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera"
+            case .microphone:
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+            }
+        }
+
+        var revokeHint: String {
+            switch self {
+            case .camera: L10n.permission.revokeCameraHint
+            case .microphone: L10n.permission.revokeMicrophoneHint
+            }
+        }
+    }
+
+    private enum ToolType {
+        case adb
+        case scrcpyServer
+    }
+
+    private func createPermissionRow(name: String, description: String, permissionType: PermissionType) -> NSView {
+        // 左侧：状态图标 + 名称和描述
+        let leftStack = StackContainerView()
+        leftStack.axis = .horizontal
+        leftStack.alignment = .top
+        leftStack.spacing = 8
+
+        // 状态图标
+        let statusIcon = NSImageView()
+        statusIcon.image = NSImage(systemSymbolName: "circle", accessibilityDescription: nil)
+        statusIcon.contentTintColor = .secondaryLabelColor
+        statusIcon.setFrameSize(NSSize(width: 18, height: 18))
+        leftStack.addArrangedSubview(statusIcon)
+
+        // 名称和描述
+        let infoStack = StackContainerView()
+        infoStack.axis = .vertical
+        infoStack.alignment = .leading
+        infoStack.spacing = 4
+        let nameLabel = NSTextField(labelWithString: name)
+        nameLabel.font = NSFont.systemFont(ofSize: 13)
+        infoStack.addArrangedSubview(nameLabel)
+        let descLabel = NSTextField(wrappingLabelWithString: description)
+        descLabel.font = NSFont.systemFont(ofSize: 11)
+        descLabel.textColor = .secondaryLabelColor
+        infoStack.addArrangedSubview(descLabel)
+        leftStack.addArrangedSubview(infoStack)
+
+        // 右侧：状态文本 + 按钮
+        let rightStack = StackContainerView()
+        rightStack.axis = .horizontal
+        rightStack.alignment = .centerY
+        rightStack.spacing = 8
+
+        // 状态文本
+        let statusLabel = NSTextField(labelWithString: L10n.common.checking)
+        statusLabel.font = NSFont.systemFont(ofSize: 11)
+        statusLabel.textColor = .secondaryLabelColor
+        statusLabel.alignment = .right
+        rightStack.addArrangedSubview(statusLabel)
+
+        // 只保留一个操作按钮，按状态切换标题与动作：
+        // 多个按钮各自占位时，行宽不足会把按钮挤成固定宽度，出现「撤销权」这类文字截断。
+        let actionButton = NSButton(
+            title: L10n.permission.revoke,
+            target: self,
+            action: #selector(revokePermission(_:))
+        )
+        actionButton.bezelStyle = .rounded
+        actionButton.controlSize = .small
+        actionButton.setContentHuggingPriority(.required, for: .horizontal)
+        actionButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        rightStack.addArrangedSubview(actionButton)
+
+        // 权限状态是同步可查的，直接在此判断，避免先按「未授权」布局再异步隐藏按钮
+        let granted = checkPermission(permissionType)
+        if granted {
+            statusIcon.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)
+            statusIcon.contentTintColor = .systemGreen
+            statusLabel.stringValue = L10n.permission.granted
+            statusLabel.textColor = .systemGreen
+            actionButton.title = L10n.permission.revoke
+            actionButton.tag = permissionType.revokeButtonTag
+            actionButton.action = #selector(revokePermission(_:))
+            actionButton.toolTip = nil
+        } else {
+            statusIcon.image = NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil)
+            statusIcon.contentTintColor = .systemOrange
+            statusLabel.stringValue = L10n.permission.denied
+            statusLabel.textColor = .systemOrange
+            statusLabel.toolTip = L10n.permission.deniedHelp
+            actionButton.title = L10n.permission.requestAgain
+            actionButton.tag = permissionType.openButtonTag
+            actionButton.action = #selector(requestPermissionAgain(_:))
+            actionButton.toolTip = L10n.permission.deniedHelp
+        }
+
+        return LabeledRowView(labelView: leftStack, control: rightStack)
+    }
+
+    private func checkPermission(_ type: PermissionType) -> Bool {
+        switch type {
+        case .camera:
+            // iOS 设备 USB 屏幕镜像使用 .muxed 媒体类型，但 .muxed 不支持 authorizationStatus 查询；
+            // 实际上 .video 权限包含了对 muxed 设备的访问权限
+            return AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+        case .microphone:
+            return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        }
+    }
+
+    // MARK: - 操作
+
+    @objc private func languageChanged(_ sender: NSPopUpButton) {
+        let index = sender.indexOfSelectedItem
+        guard index >= 0, index < AppLanguage.allCases.count else { return }
+        let language = AppLanguage.allCases[index]
+        LocalizationManager.shared.setLanguage(language)
+    }
+
+    @objc private func backgroundOpacityChanged(_ sender: NSSlider) {
+        UserPreferences.shared.backgroundOpacity = CGFloat(sender.doubleValue)
+
+        // 更新标签显示
+        if let valueLabel = sender.superview?.subviews.first(where: { $0.tag == 1001 }) as? NSTextField {
+            valueLabel.stringValue = String(format: "%.0f%%", sender.doubleValue * 100)
+        }
+
+        // 发送通知更新背景色
+        NotificationCenter.default.post(name: .backgroundColorDidChange, object: nil)
+    }
+
+    @objc private func autoMinimizeFloatingChanged(_ sender: NSButton) {
+        UserPreferences.shared.autoMinimizeInFloatingMode = sender.state == .on
+    }
+
+    @objc private func showCaptureInfoStatsChanged(_ sender: NSButton) {
+        UserPreferences.shared.showCaptureInfoStats = sender.state == .on
+        // 同步到渲染层读取的键（角标显示/隐藏即时生效）
+        UserPreferences.shared.showMirrorStats = sender.state == .on
+    }
+
+    @objc private func showDeviceControlBarChanged(_ sender: NSButton) {
+        UserPreferences.shared.showDeviceControlBar = sender.state == .on
+    }
+
+    @objc private func showDeviceBezelChanged(_ sender: NSButton) {
+        UserPreferences.shared.showDeviceBezel = sender.state == .on
+    }
+
+    @objc private func showDeviceCameraOverlayChanged(_ sender: NSButton) {
+        UserPreferences.shared.showDeviceCameraOverlay = sender.state == .on
+    }
+
+    @objc private func gridDoubleClickFocusChanged(_ sender: NSButton) {
+        UserPreferences.shared.gridDoubleClickFocusEnabled = sender.state == .on
+    }
+
+    @objc private func preventAutoLockChanged(_ sender: NSButton) {
+        UserPreferences.shared.preventAutoLockDuringCapture = sender.state == .on
+    }
+
+    @objc private func colorCompensationEnabledChanged(_ sender: NSButton) {
+        ColorProfileManager.shared.isEnabled = sender.state == .on
+    }
+
+    @objc private func openColorCompensationPanel(_ sender: NSButton) {
+        ColorCompensationPanel.shared.showWindow(nil)
+    }
+
+    @objc private func layoutModeChanged(_ sender: NSSegmentedControl) {
+        let index = sender.selectedSegment
+        guard index >= 0, index < PreviewLayoutMode.allCases.count else { return }
+        UserPreferences.shared.layoutMode = PreviewLayoutMode.allCases[index]
+    }
+
+    @objc private func devicePositionChanged(_ sender: NSSegmentedControl) {
+        UserPreferences.shared.iosOnLeft = sender.selectedSegment == 0
+    }
+
+    @objc private func gridPageSizeChanged(_ sender: NSPopUpButton) {
+        // 0=自动；1/4/6/9/16=固定页大小
+        let index = sender.indexOfSelectedItem
+        guard index > 0 else {
+            UserPreferences.shared.gridPageSize = 0
+            return
+        }
+        let presets = UserPreferences.gridPageSizePresets
+        if index - 1 < presets.count {
+            UserPreferences.shared.gridPageSize = presets[index - 1]
+        }
+    }
+
+    @objc private func frameRateChanged(_ sender: NSSegmentedControl) {
+        let frameRates = [30, 60, 120]
+        UserPreferences.shared.captureFrameRate = frameRates[sender.selectedSegment]
+    }
+
+    @objc private func scrcpyBitrateChanged(_ sender: NSPopUpButton) {
+        let bitrates = [4, 8, 16, 32]
+        let index = sender.indexOfSelectedItem
+        if index >= 0, index < bitrates.count {
+            UserPreferences.shared.scrcpyBitrate = bitrates[index]
+        }
+    }
+
+    @objc private func scrcpyMaxSizeChanged(_ sender: NSPopUpButton) {
+        let sizes = [0, 1280, 1920, 2560]
+        let index = sender.indexOfSelectedItem
+        if index >= 0, index < sizes.count {
+            UserPreferences.shared.scrcpyMaxSize = sizes[index]
+        }
+    }
+
+    @objc private func scrcpyShowTouchesChanged(_ sender: NSButton) {
+        UserPreferences.shared.scrcpyShowTouches = sender.state == .on
+    }
+
+    @objc private func androidControlEnabledChanged(_ sender: NSButton) {
+        UserPreferences.shared.androidControlEnabled = sender.state == .on
+    }
+
+    @objc private func androidControlModeChanged(_ sender: NSPopUpButton) {
+        let index = sender.indexOfSelectedItem
+        guard index >= 0, index < ScrcpyInputMode.allCases.count else { return }
+        UserPreferences.shared.androidControlMode = ScrcpyInputMode.allCases[index]
+    }
+
+    @objc private func androidControlHoverChanged(_ sender: NSButton) {
+        UserPreferences.shared.androidControlHover = sender.state == .on
+    }
+
+    @objc private func scrcpyPortRangeStartChanged(_ sender: NSTextField) {
+        guard let port = Int(sender.stringValue), port >= 1024, port <= 65535 else {
+            // 恢复为当前值
+            sender.stringValue = String(UserPreferences.shared.scrcpyPortRangeStart)
+            return
+        }
+        UserPreferences.shared.scrcpyPortRangeStart = port
+    }
+
+    @objc private func scrcpyPortRangeEndChanged(_ sender: NSTextField) {
+        guard let port = Int(sender.stringValue), port >= 1024, port <= 65535 else {
+            // 恢复为当前值
+            sender.stringValue = String(UserPreferences.shared.scrcpyPortRangeEnd)
+            return
+        }
+        UserPreferences.shared.scrcpyPortRangeEnd = port
+    }
+
+    @objc private func scrcpyCodecChanged(_ sender: NSPopUpButton) {
+        let index = sender.indexOfSelectedItem
+        guard index >= 0, index < ScrcpyCodecType.allCases.count else { return }
+        UserPreferences.shared.scrcpyCodec = ScrcpyCodecType.allCases[index]
+    }
+
+    // MARK: - iOS 音频设置
+
+    @objc private func iosAudioEnabledChanged(_ sender: NSButton) {
+        let enabled = sender.state == .on
+        UserPreferences.shared.iosAudioEnabled = enabled
+
+        // 更新当前正在捕获的设备源
+        AppState.shared.iosDeviceSource?.isAudioEnabled = enabled
+    }
+
+    @objc private func iosAudioVolumeChanged(_ sender: NSSlider) {
+        let volume = Float(sender.doubleValue)
+        UserPreferences.shared.iosAudioVolume = volume
+
+        // 更新当前正在捕获的设备源
+        AppState.shared.iosDeviceSource?.audioVolume = volume
+
+        // 更新标签
+        if let label = sender.superview?.subviews.first(where: { $0.tag == 4003 }) as? NSTextField {
+            label.stringValue = "\(Int(volume * 100))%"
+        }
+    }
+
+    // MARK: - Android 音频设置
+
+    @objc private func androidAudioEnabledChanged(_ sender: NSButton) {
+        let enabled = sender.state == .on
+        UserPreferences.shared.androidAudioEnabled = enabled
+
+        // 注意：Android 音频需要重启捕获才能生效
+        // 因为 scrcpy 的音频设置在启动时确定
+    }
+
+    @objc private func androidAudioVolumeChanged(_ sender: NSSlider) {
+        let volume = Float(sender.doubleValue)
+        UserPreferences.shared.androidAudioVolume = volume
+
+        // 更新当前正在捕获的设备源
+        AppState.shared.androidDeviceSource?.audioVolume = volume
+
+        // 更新标签
+        if let label = sender.superview?.subviews.first(where: { $0.tag == 4013 }) as? NSTextField {
+            label.stringValue = "\(Int(volume * 100))%"
+        }
+    }
+
+    @objc private func androidAudioCodecChanged(_ sender: NSPopUpButton) {
+        let codec: ScrcpyConfiguration.AudioCodec = switch sender.indexOfSelectedItem {
+        case 0: .opus
+        case 1: .aac
+        case 2: .raw
+        default: .opus
+        }
+        UserPreferences.shared.androidAudioCodec = codec
+
+        // 注意：音频编解码器更改需要重启捕获才能生效
+        // 因为 scrcpy 的音频编解码器设置在启动时确定
+    }
+
+    @objc private func refreshToolchain() {
+        Task {
+            await AppState.shared.toolchainManager.refresh()
+        }
+    }
+
+    @objc private func openScrcpyGitHub() {
+        if let url = URL(string: "https://github.com/Genymobile/scrcpy") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// 重新请求权限
+    /// macOS 对 .denied 状态不会再弹窗，因此先尝试 requestAccess：
+    /// 只有 .notDetermined 才会真正弹窗；其余情况给出明确的手动操作指引。
+    @objc private func requestPermissionAgain(_ sender: NSButton) {
+        let type = permissionType(forOpenTag: sender.tag) ?? .camera
+
+        let mediaType: AVMediaType = switch type {
+        case .camera: .video
+        case .microphone: .audio
+        }
+
+        let status = AVCaptureDevice.authorizationStatus(for: mediaType)
+        guard status == .notDetermined else {
+            // 已经是 denied/restricted，系统不会再弹窗，直接引导用户
+            showManualPermissionGuide(for: type)
+            return
+        }
+
+        AVCaptureDevice.requestAccess(for: mediaType) { [weak self] granted in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if granted {
+                    self.reloadPreferencesContent()
+                } else {
+                    self.showManualPermissionGuide(for: type)
+                }
+            }
+        }
+    }
+
+    /// 提示用户去系统设置手动勾选（含「已勾选但仍无效」的处理方式）
+    private func showManualPermissionGuide(for type: PermissionType) {
+        let alert = NSAlert()
+        alert.messageText = L10n.permission.requestAgainTitle
+        alert.informativeText = L10n.permission.requestAgainMessage
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: L10n.permission.openSystemPrefs)
+        alert.addButton(withTitle: L10n.common.cancel)
+
+        if alert.runModal() == .alertFirstButtonReturn, let url = URL(string: type.systemPreferencesURL) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// 重新加载偏好设置界面（权限状态变化后刷新显示）
+    private func reloadPreferencesContent() {
+        let tab = currentTabIndex
+        tabViews.removeAll()
+        setupUI()
+        segmentedControl.selectedSegment = tab
+        showTab(at: tab)
+    }
+
+    // MARK: - 重启应用
+
+    /// 立即重启应用：保存偏好后启动新实例并退出当前实例
+    @objc private func restartApplication(_ sender: Any?) {
+        // 让用户先确认，避免正在投屏时被误触
+        let alert = NSAlert()
+        alert.messageText = L10n.prefs.audioPref.restartTitle
+        alert.informativeText = L10n.prefs.audioPref.restartMessage
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: L10n.prefs.audioPref.restartNow)
+        alert.addButton(withTitle: L10n.common.cancel)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        UserDefaults.standard.synchronize()
+
+        let bundleURL = Bundle.main.bundleURL
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+
+        NSWorkspace.shared.openApplication(at: bundleURL, configuration: configuration) { _, error in
+            DispatchQueue.main.async {
+                if let error {
+                    AppLogger.app.error("重启应用失败: \(error.localizedDescription)")
+                    let failure = NSAlert()
+                    failure.messageText = L10n.prefs.audioPref.restartFailedTitle
+                    failure.informativeText = error.localizedDescription
+                    failure.alertStyle = .warning
+                    failure.addButton(withTitle: L10n.common.ok)
+                    failure.runModal()
+                    return
+                }
+                NSApp.terminate(nil)
+            }
+        }
+    }
+
+    @objc private func openSystemPreferences(_ sender: NSButton) {
+        // 按按钮 tag 反查权限类型，打开对应的隐私设置面板
+        let type = permissionType(forOpenTag: sender.tag) ?? .camera
+        if let url = URL(string: type.systemPreferencesURL) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    @objc private func revokePermission(_ sender: NSButton) {
+        let type = permissionType(forRevokeTag: sender.tag) ?? .camera
+
+        let alert = NSAlert()
+        alert.messageText = L10n.permission.revokeTitle
+        alert.informativeText = type.revokeHint
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: L10n.permission.openSystemPrefs)
+        alert.addButton(withTitle: L10n.common.cancel)
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            if let url = URL(string: type.systemPreferencesURL) {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    private func permissionType(forOpenTag tag: Int) -> PermissionType? {
+        [.camera, .microphone].first { $0.openButtonTag == tag }
+    }
+
+    private func permissionType(forRevokeTag tag: Int) -> PermissionType? {
+        [.camera, .microphone].first { $0.revokeButtonTag == tag }
+    }
+
+    // MARK: - 工具链路径设置
+
+    @objc private func useCustomPathChanged(_ sender: NSButton) {
+        guard let toolType = toolTypeFromTag(sender.tag) else { return }
+        let useCustom = sender.state == .on
+
+        switch toolType {
+        case .adb:
+            UserPreferences.shared.useCustomAdbPath = useCustom
+        case .scrcpyServer:
+            UserPreferences.shared.useCustomScrcpyServerPath = useCustom
+        }
+
+        // 查找对应的路径输入行并更新显示
+        // 视图层级：checkbox -> LabeledRowView(customPathRow) -> containerStack
+        let pathInputRowTag = tagForToolType(toolType, base: 4041)
+        if
+            let customPathRow = sender.superview,
+            let containerStack = customPathRow.superview as? StackContainerView {
+            for arrangedSubview in containerStack.arrangedSubviews {
+                // pathInputRow 是 PaddingView，有专门的 tag
+                if arrangedSubview.tag == pathInputRowTag {
+                    arrangedSubview.isHidden = !useCustom
+                    // 触发布局更新
+                    containerStack.needsLayout = true
+                    containerStack.layoutSubtreeIfNeeded()
+                    // 通知父视图重新布局
+                    containerStack.superview?.needsLayout = true
+                    containerStack.superview?.layoutSubtreeIfNeeded()
+                    break
+                }
+            }
+        }
+
+        // 刷新工具链状态
+        Task {
+            await AppState.shared.toolchainManager.refresh()
+        }
+    }
+
+    // MARK: - 投屏录制分页 Actions
+
+    /// 当前保存位置的展示路径：用户设定值或默认 Movies。
+    private func recordingSaveLocationDisplayPath() -> String {
+        let base = UserPreferences.shared.recordingSaveDirectory
+            ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true).appendingPathComponent("Movies")
+        return (base.path as NSString).abbreviatingWithTildeInPath
+    }
+
+    private func refreshRecordingPathLabel() {
+        guard let label = contentContainer.viewWithTag(Self.recordingPathLabelTag) as? NSTextField else { return }
+        label.stringValue = recordingSaveLocationDisplayPath()
+        label.superview?.needsLayout = true
+        label.superview?.layoutSubtreeIfNeeded()
+    }
+
+    @objc private func chooseRecordingFolder(_ sender: NSButton) {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.message = L10n.prefs.recording.saveLocation
+        panel.prompt = L10n.common.ok
+        panel.directoryURL = UserPreferences.shared.recordingSaveDirectory
+            ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+
+        if panel.runModal() == .OK, let url = panel.url {
+            UserPreferences.shared.recordingSaveDirectory = url
+            refreshRecordingPathLabel()
+        }
+    }
+
+    @objc private func resetRecordingFolder(_ sender: NSButton) {
+        UserPreferences.shared.recordingSaveDirectory = nil
+        refreshRecordingPathLabel()
+    }
+
+    @objc private func recordingMicrophoneToggled(_ sender: NSButton) {
+        UserPreferences.shared.recordingMicrophoneEnabled = (sender.state == .on)
+    }
+
+    @objc private func customPathChanged(_ sender: NSTextField) {
+        guard let toolType = toolTypeFromTag(sender.tag) else { return }
+        let path = sender.stringValue
+
+        switch toolType {
+        case .adb:
+            UserPreferences.shared.customAdbPath = path.isEmpty ? nil : path
+        case .scrcpyServer:
+            UserPreferences.shared.customScrcpyServerPath = path.isEmpty ? nil : path
+        }
+
+        // 更新验证图标
+        let validationTag = tagForToolType(toolType, base: 4031)
+        if let parentStack = sender.superview as? StackContainerView {
+            for subview in parentStack.arrangedSubviews {
+                if let icon = subview as? NSImageView, icon.tag == validationTag {
+                    updatePathValidation(toolType: toolType, validationIcon: icon)
+                    break
+                }
+            }
+        }
+
+        // 刷新工具链状态
+        Task {
+            await AppState.shared.toolchainManager.refresh()
+        }
+    }
+
+    @objc private func browseToolPath(_ sender: NSButton) {
+        guard let toolType = toolTypeFromTag(sender.tag) else { return }
+        let toolName = switch toolType {
+        case .adb: "adb"
+        case .scrcpyServer: "scrcpy-server"
+        }
+
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.message = L10n.prefs.toolchain.selectTool(toolName)
+        panel.prompt = L10n.common.ok
+
+        // 设置初始目录
+        if let currentPath = customPathForToolType(toolType), !currentPath.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
+        } else {
+            panel.directoryURL = URL(fileURLWithPath: "/usr/local/bin")
+        }
+
+        if panel.runModal() == .OK, let url = panel.url {
+            let path = url.path
+
+            // 更新 UserPreferences
+            switch toolType {
+            case .adb:
+                UserPreferences.shared.customAdbPath = path
+            case .scrcpyServer:
+                UserPreferences.shared.customScrcpyServerPath = path
+            }
+
+            // 更新文本框
+            // 视图层级：browseButton -> pathInputStack (StackContainerView)
+            let textFieldTag = tagForToolType(toolType, base: 4011)
+            if let pathInputStack = sender.superview as? StackContainerView {
+                for subview in pathInputStack.arrangedSubviews {
+                    if let textField = subview as? NSTextField, textField.tag == textFieldTag {
+                        textField.stringValue = path
+                        break
+                    }
+                }
+
+                // 更新验证图标
+                let validationTag = tagForToolType(toolType, base: 4031)
+                for subview in pathInputStack.arrangedSubviews {
+                    if let icon = subview as? NSImageView, icon.tag == validationTag {
+                        updatePathValidation(toolType: toolType, validationIcon: icon)
+                        break
+                    }
+                }
+            }
+
+            // 刷新工具链状态
+            Task {
+                await AppState.shared.toolchainManager.refresh()
+            }
+        }
+    }
+
+    @objc private func clearToolPath(_ sender: NSButton) {
+        guard let toolType = toolTypeFromTag(sender.tag) else { return }
+
+        // 清空 UserPreferences
+        switch toolType {
+        case .adb:
+            UserPreferences.shared.customAdbPath = nil
+        case .scrcpyServer:
+            UserPreferences.shared.customScrcpyServerPath = nil
+        }
+
+        // 清空文本框并更新验证图标
+        // 视图层级：clearButton -> pathInputStack (StackContainerView)
+        if let pathInputStack = sender.superview as? StackContainerView {
+            let textFieldTag = tagForToolType(toolType, base: 4011)
+            let validationTag = tagForToolType(toolType, base: 4031)
+
+            for subview in pathInputStack.arrangedSubviews {
+                if let textField = subview as? NSTextField, textField.tag == textFieldTag {
+                    textField.stringValue = ""
+                }
+                if let icon = subview as? NSImageView, icon.tag == validationTag {
+                    updatePathValidation(toolType: toolType, validationIcon: icon)
+                }
+            }
+        }
+
+        // 刷新工具链状态
+        Task {
+            await AppState.shared.toolchainManager.refresh()
+        }
+    }
+}
+
+// MARK: - 通知名称
+
+extension Notification.Name {
+    static let backgroundColorDidChange = Notification.Name("backgroundColorDidChange")
+    static let deviceBezelVisibilityDidChange = Notification.Name("deviceBezelVisibilityDidChange")
+    static let captureInfoVisibilityDidChange = Notification.Name("captureInfoVisibilityDidChange")
+    static let windowChromeVisibilityDidChange = Notification.Name("windowChromeVisibilityDidChange")
+    static let layoutModeDidChange = Notification.Name("layoutModeDidChange")
+    static let gridPageSizeDidChange = Notification.Name("gridPageSizeDidChange")
+    static let preventAutoLockSettingDidChange = Notification.Name("preventAutoLockSettingDidChange")
+    static let audioSettingsDidChange = Notification.Name("audioSettingsDidChange")
+}

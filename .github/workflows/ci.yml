@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build macOS App
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install xcbeautify
+        run: command -v xcbeautify >/dev/null || brew install xcbeautify
+
+      - name: Prepare generated sources
+        run: |
+          if [ ! -f StageCast/Core/Utilities/Secrets.swift ]; then
+            cp StageCast/Core/Utilities/Secrets.swift.template StageCast/Core/Utilities/Secrets.swift
+          fi
+
+      - name: Validate bundled tools
+        run: |
+          test -f StageCast/Resources/Tools/platform-tools/adb
+          test -f StageCast/Resources/Tools/scrcpy-server
+          file StageCast/Resources/Tools/scrcpy-server
+          unzip -tq StageCast/Resources/Tools/scrcpy-server
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project StageCast.xcodeproj \
+            -scheme StageCast
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild clean build \
+            -project StageCast.xcodeproj \
+            -scheme StageCast \
+            -configuration Debug \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            2>&1 | xcbeautify

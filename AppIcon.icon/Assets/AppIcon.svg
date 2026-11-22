@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0.08" y1="0" x2="0.94" y2="1">
+      <stop offset="0%" stop-color="#8B7BFF"/>
+      <stop offset="42%" stop-color="#6355EE"/>
+      <stop offset="100%" stop-color="#9333EA"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="50%" cy="6%" r="76%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="42%" stop-color="#FFFFFF" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="floorGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F5F3FF" stop-opacity="0.62"/>
+      <stop offset="45%" stop-color="#C4B5FD" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#C4B5FD" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="screenA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80"/>
+      <stop offset="40%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="screenB" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80"/>
+      <stop offset="40%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E4E4F4"/>
+    </linearGradient>
+    <filter id="shadowA" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#1E0F4D" flood-opacity="0.46"/>
+    </filter>
+    <filter id="shadowB" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#1E0F4D" flood-opacity="0.34"/>
+    </filter>
+    <clipPath id="squircleClip">
+      <rect x="100" y="100" width="824" height="824" rx="185"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#squircleClip)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#bgGrad)"/>
+    <rect x="100" y="100" width="824" height="824" fill="url(#spot)"/>
+    <ellipse cx="512" cy="756" rx="300" ry="62" fill="url(#floorGlow)"/>
+  </g>
+
+  <!-- Android 设备（右后） -->
+  <g filter="url(#shadowB)" transform="rotate(5 646 512)">
+    <rect x="566" y="296" width="178" height="376" rx="27" fill="url(#bodyGrad)"/>
+    <rect x="575" y="305" width="160" height="358" rx="20" fill="url(#screenB)"/>
+    <circle cx="655" cy="327" r="7" fill="#FFFFFF" fill-opacity="0.95"/>
+    <rect x="627" y="636" width="56" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.85"/>
+  </g>
+
+  <!-- iOS 设备（左前，更大更靠下） -->
+  <g filter="url(#shadowA)" transform="rotate(-4 470 520)">
+    <rect x="288" y="272" width="208" height="420" rx="50" fill="url(#bodyGrad)"/>
+    <rect x="297" y="281" width="190" height="402" rx="42" fill="url(#screenA)"/>
+    <rect x="353" y="298" width="78" height="22" rx="11" fill="#FFFFFF" fill-opacity="0.97"/>
+    <rect x="358" y="648" width="68" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.9"/>
+  </g>
+</svg>

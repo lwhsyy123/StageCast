@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<!-- 重命名后的本地构建不接入上游更新源，避免被上游项目的版本覆盖 -->
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<!-- 本地网络权限：用于通过 mDNS 自动发现同一局域网内的 Android 无线调试设备 -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>StageCast 需要访问本地网络，以便通过 mDNS 自动发现同一网络下的 Android 设备。</string>
+	<!-- 需要浏览的 Bonjour 服务类型（adb 无线调试 / 配对 / 旧版无线 adb） -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_adb-tls-connect._tcp</string>
+		<string>_adb-tls-pairing._tcp</string>
+		<string>_adb._tcp</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Plain Text</string>
+			<key>UTTypeIdentifier</key>
+			<string>app.screenpresenter.txt</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>txt</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>

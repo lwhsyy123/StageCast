@@ -1,0 +1,627 @@
+/*
+  Localizable.strings (English)
+  StageCast
+
+  Created by Sun on 2025/12/23.
+*/
+
+// MARK: - App
+"app.name" = "StageCast";
+"app.description" = "macOS Screen Mirroring Tool\nDisplay iOS and Android device screens simultaneously";
+
+// MARK: - Common
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.close" = "Close";
+"common.copy" = "Copy";
+"common.refresh" = "Refresh";
+"common.install" = "Install";
+"common.version" = "Version";
+"common.status" = "Status";
+"common.error" = "Error";
+"common.unknown" = "Unknown";
+"common.checking" = "Checking...";
+"common.loading" = "Loading...";
+
+// MARK: - Alert
+"alert.quit" = "Quit";
+"alert.cancel" = "Cancel";
+"alert.quitConfirmMessage" = "Are you sure you want to quit StageCast?";
+"alert.quitConfirmImpactMessage" = "Quitting will stop %d active screen mirroring session(s).";
+"alert.quitConfirmShortcutHint" = "Tip: while this confirmation is visible, press Cmd+Q again to quit immediately.";
+"alert.dontSave" = "Don't Save";
+
+// MARK: - Menu
+"menu.about" = "About StageCast";
+"menu.preferences" = "Preferences...";
+"menu.services" = "Services";
+"menu.hide" = "Hide StageCast";
+"menu.hideOthers" = "Hide Others";
+"menu.showAll" = "Show All";
+"menu.quit" = "Quit StageCast";
+"menu.checkForUpdates" = "Check for Updates...";
+"menu.device" = "Device";
+"menu.capture" = "Capture";
+"menu.refreshDevices" = "Refresh Devices";
+"menu.exportLogs" = "Export Logs...";
+"menu.close" = "Close";
+"menu.window" = "Window";
+"menu.minimize" = "Minimize";
+"menu.zoom" = "Zoom";
+"menu.bringAllToFront" = "Bring All to Front";
+"menu.toggleFullScreen" = "Enter Full Screen";
+"menu.help" = "Help";
+"menu.githubHomepage" = "GitHub Homepage";
+"menu.reportIssue" = "Report an Issue";
+"menu.edit" = "Edit";
+"menu.undo" = "Undo";
+"menu.redo" = "Redo";
+"menu.cut" = "Cut";
+"menu.copy" = "Copy";
+"menu.paste" = "Paste";
+"menu.selectAll" = "Select All";
+"menu.find" = "Find";
+"menu.findAndReplace" = "Find and Replace...";
+"menu.findNext" = "Find Next";
+"menu.findPrevious" = "Find Previous";
+"menu.useSelectionForFind" = "Use Selection for Find";
+"menu.selectAllOccurrences" = "Select All Occurrences";
+"menu.selectNextOccurrence" = "Select Next Occurrence";
+"menu.jumpToSelection" = "Jump to Selection";
+"menu.format" = "Format";
+"menu.bold" = "Bold";
+"menu.italic" = "Italic";
+"menu.strikethrough" = "Strikethrough";
+"menu.inlineCode" = "Inline Code";
+"menu.heading" = "Heading";
+"menu.heading1" = "Heading 1";
+"menu.heading2" = "Heading 2";
+"menu.heading3" = "Heading 3";
+"menu.heading4" = "Heading 4";
+"menu.heading5" = "Heading 5";
+"menu.heading6" = "Heading 6";
+"menu.bulletList" = "Bullet List";
+"menu.numberedList" = "Numbered List";
+"menu.blockquote" = "Blockquote";
+"menu.codeBlock" = "Code Block";
+"menu.insertLink" = "Insert Link...";
+"menu.insertImage" = "Insert Image...";
+"menu.insertTable" = "Insert Table...";
+"menu.insertHorizontalRule" = "Horizontal Rule";
+
+// MARK: - Window
+"window.preferences" = "Preferences";
+"window.main" = "StageCast";
+
+// MARK: - Device Status
+"device.connected" = "Connected";
+"device.disconnected" = "Disconnected";
+"device.connecting" = "Connecting...";
+"device.capturing" = "Capturing";
+"device.waitingAuth" = "Waiting for Authorization";
+"device.idle" = "Idle";
+"device.paused" = "Paused";
+"device.error" = "Error: %@";
+
+// MARK: - Device Platform
+"platform.ios" = "iOS";
+"platform.android" = "Android";
+
+// MARK: - Device Overlay
+"overlay.disconnected" = "No device connected";
+"overlay.clickToStart" = "Click to start capture";
+"overlay.fps" = "%d fps";
+
+// MARK: - Status Bar
+"statusBar.waitingDevice" = "Waiting for device connection...";
+"statusBar.ios" = "iOS: %@";
+"statusBar.android" = "Android: %@";
+
+// MARK: - Layout
+"layout.sideBySide" = "Side by Side";
+"layout.auto" = "Auto Arrange";
+"layout.floating" = "Floating Windows";
+"layout.grid" = "Grid";
+"layout.gridPageSize" = "Devices per Grid Page";
+"layout.gridPageSizeAuto" = "Auto";
+"layout.returnToGrid" = "Back to Grid";
+"layout.swapHint" = "Drag to Swap";
+
+// MARK: - Theme
+"theme.system" = "Follow System";
+"theme.light" = "Light";
+"theme.dark" = "Dark";
+
+// MARK: - Language
+"language.system" = "Follow System";
+"language.en" = "English";
+"language.zhHans" = "简体中文";
+
+// MARK: - Preferences - Tabs
+"prefs.tab.general" = "General";
+"prefs.tab.capture" = "Capture";
+"prefs.tab.recording" = "Recording";
+"prefs.tab.scrcpy" = "Scrcpy";
+"prefs.tab.permissions" = "Permissions";
+"prefs.tab.toolchain" = "Toolchain";
+"prefs.tab.about" = "About";
+
+// MARK: - Preferences - Sections
+"prefs.section.language" = "Language";
+"prefs.section.appearance" = "Appearance";
+"prefs.section.layout" = "Layout";
+"prefs.section.frameRate" = "Frame Rate";
+"prefs.section.overlay" = "Mirror Overlay";
+"prefs.section.controlBar" = "Mirror Controls";
+"prefs.section.window" = "Window Appearance";
+"prefs.capture.autoMinimizeFloating" = "Auto-minimize the main window in floating mode";
+"prefs.capture.autoMinimizeFloatingNote" = "Each device gets its own window, so the main window shows nothing. Minimize it to the Dock to free up your desktop.";
+"prefs.capture.showControlBar" = "Show mirror control buttons";
+"prefs.capture.showControlBarNote" = "Shows a separate control bar beside the mirror: volume up/down, power, rotate, home, back. It hides automatically when the pointer leaves.";
+"prefs.capture.showInfoOnHover" = "Show mirror info on hover";
+"prefs.capture.showInfoOnHoverNote" = "When off, the overlay no longer appears when the pointer crosses the mirror, keeping demos clean.";
+"prefs.capture.showInfoStats" = "Show FPS and resolution";
+"prefs.capture.showInfoAudio" = "Show volume control";
+"prefs.capture.showInfoAudioNote" = "When off, the volume slider is hidden from the overlay; use the device control buttons instead.";
+"prefs.section.recordingOutput" = "Save Location";
+"prefs.section.recordingAudio" = "Audio";
+"prefs.section.audio" = "Audio";
+"prefs.section.iosAudio" = "iOS Audio";
+"prefs.section.androidAudio" = "Android Audio";
+"prefs.section.android" = "Android (Scrcpy)";
+"prefs.section.video" = "Video";
+"prefs.section.display" = "Display";
+"prefs.section.advanced" = "Advanced";
+"prefs.section.systemPermissions" = "System Permissions";
+"prefs.section.iosPermissions" = "iOS Permissions";
+"prefs.section.androidPermissions" = "Android Permissions";
+"prefs.section.androidToolchain" = "Android Toolchain";
+
+// MARK: - Preferences - Audio
+"prefs.audio.enableCapture" = "Enable Audio Capture";
+"prefs.audio.volume" = "Volume";
+"prefs.audio.enableCaptureRestartHint" = "(takes effect when you restart mirroring)";
+"prefs.audio.restartNow" = "Restart Now";
+"prefs.audio.restartNowHint" = "Save settings and restart StageCast so changes apply immediately";
+"prefs.audio.restartTitle" = "Restart StageCast?";
+"prefs.audio.restartMessage" = "The app will quit and reopen automatically. Any active mirroring session will end.";
+"prefs.audio.restartFailedTitle" = "Restart Failed";
+"prefs.audio.iosNote" = "Audio capture requires iOS device connected via USB";
+"prefs.audio.androidNote" = "Requires Android 11+.";
+"prefs.audio.codec" = "Audio Codec";
+
+// MARK: - Preferences - General
+"prefs.general.displaySettings" = "Display Settings";
+"prefs.general.autoStartCapture" = "Auto start capture on launch";
+"prefs.general.showFPS" = "Show frame rate statistics";
+"prefs.general.language" = "Language";
+"prefs.general.languageNote" = "Restart app to apply language change";
+
+// MARK: - Preferences - Appearance
+"prefs.appearance.backgroundOpacity" = "Background Opacity";
+"prefs.appearance.showDeviceBezel" = "Show Device Bezel";
+"prefs.appearance.showDeviceCameraOverlay" = "Show iPhone Notch / Dynamic Island";
+
+// MARK: - Preferences - Power
+"prefs.power.sectionTitle" = "Power Management";
+"prefs.power.preventAutoLock" = "Prevent Auto Lock During Capture";
+"prefs.power.preventAutoLockHelp" = "Prevents system auto sleep/lock only. Manual lock is not affected.";
+
+// MARK: - Preferences - Color Compensation
+"prefs.colorCompensation.sectionTitle" = "Color Compensation";
+"prefs.colorCompensation.enable" = "Enable Color Compensation";
+"prefs.colorCompensation.openPanel" = "Open Compensation Panel...";
+"prefs.colorCompensation.description" = "Enable this feature and adjust related parameters to achieve relatively accurate screen color reproduction on displays with non-standard color performance.";
+
+// MARK: - Preferences - Layout
+"prefs.layout.devicePosition" = "Default Device Layout";
+"prefs.layout.iosOnLeft" = "iOS | Android";
+"prefs.layout.androidOnLeft" = "Android | iOS";
+"prefs.layout.gridDoubleClickFocus" = "Double-click Grid Cell to Focus";
+
+// MARK: - Preferences - Capture
+"prefs.capture.frameRate" = "Capture Frame Rate";
+"prefs.capture.frameRateNote" = "Higher frame rate increases CPU and GPU load";
+"prefs.recording.saveLocation" = "Save to";
+"prefs.recording.saveLocationNote" = "Recordings are stored in a \"StageCast Recordings\" subfolder of the chosen directory";
+"prefs.recording.chooseFolder" = "Choose Folder…";
+"prefs.recording.resetToDefault" = "Reset to Default";
+"prefs.recording.enableMicrophone" = "Record Microphone Audio";
+"prefs.recording.enableMicrophoneNote" = "When off, only the screen is recorded and microphone permission is not requested";
+
+// MARK: - Preferences - Scrcpy
+"prefs.scrcpy.bitrate" = "Bitrate";
+"prefs.scrcpy.maxSize" = "Max Size";
+"prefs.scrcpy.maxSizeNote" = "Limiting size can reduce CPU load";
+"prefs.scrcpy.showTouches" = "Show Touches";
+"prefs.scrcpy.advancedNote" = "See official documentation for more scrcpy options";
+"prefs.scrcpy.github" = "scrcpy GitHub";
+"prefs.scrcpy.noLimit" = "No Limit";
+"prefs.scrcpy.pixels" = "%d pixels";
+"prefs.scrcpy.mbps" = "%d Mbps";
+"prefs.scrcpy.portRange" = "Port Range";
+"prefs.scrcpy.codec" = "Video Codec";
+"prefs.scrcpy.controlEnabled" = "Allow Mouse/Keyboard Control";
+"prefs.scrcpy.controlNote" = "When enabled, you can click, drag, scroll and type directly on the mirrored screen. Right-click goes back, middle-click goes home, ⌥ + drag simulates pinch/rotate, and ⌃V pastes your clipboard into the device.";
+"prefs.scrcpy.controlMode" = "Input Mode";
+"prefs.scrcpy.controlMode.mouse" = "Mouse (hover + right click)";
+"prefs.scrcpy.controlMode.touch" = "Touch (simulated finger)";
+"prefs.scrcpy.controlHover" = "Send Mouse Hover Events";
+"prefs.scrcpy.audioRestartTitle" = "Audio Settings Changed";
+"prefs.scrcpy.audioRestartMessage" = "Audio changes require re-establishing the mirror session. Restart the mirror now?";
+"prefs.scrcpy.audioRestartNow" = "Restart Now";
+"prefs.scrcpy.audioRestartLater" = "Later";
+"prefs.scrcpy.audioUnavailableTitle" = "Audio Not Supported";
+"prefs.scrcpy.audioUnavailableMessage" = "Audio is enabled but no audio data arrived. scrcpy audio forwarding requires Android 11 or later.";
+"prefs.scrcpy.controlRestartNote" = "Control settings take effect after restarting the mirror session.";
+"menu.androidControl" = "Mouse/Keyboard Control";
+"menu.toggleWindowChrome" = "Hide Title Bar";
+"menu.layoutMode" = "Layout";
+"overlay.control.record" = "Record";
+"overlay.control.volumeUp" = "Volume Up";
+"overlay.control.volumeDown" = "Volume Down";
+"overlay.control.power" = "Power";
+"overlay.control.rotate" = "Rotate";
+"overlay.control.home" = "Home";
+"overlay.control.back" = "Back";
+"overlay.androidControlOn" = "Mouse/keyboard control enabled";
+"overlay.androidControlOff" = "Mouse/keyboard control disabled";
+
+// MARK: - Preferences - Toolchain
+"prefs.toolchain.title" = "Toolchain Status";
+"prefs.toolchain.adb" = "adb: %@";
+"prefs.toolchain.scrcpy" = "scrcpy: %@";
+"prefs.toolchain.refresh" = "Refresh Status";
+"prefs.toolchain.refreshStatus" = "Refresh Status";
+"prefs.toolchain.installScrcpy" = "Install scrcpy (Homebrew)";
+"prefs.toolchain.notInstalled" = "Not Installed";
+"prefs.toolchain.installing" = "Installing...";
+"prefs.toolchain.bundled" = "Bundled %@";
+"prefs.toolchain.adbDesc" = "Android Debug Bridge";
+"prefs.toolchain.scrcpyDesc" = "Android Screen Mirror Client";
+"prefs.toolchain.scrcpyServerDesc" = "Android Screen Mirror Server (DEX)";
+"prefs.toolchain.useCustomPath" = "Use custom path";
+"prefs.toolchain.pathPlaceholder" = "Enter tool path...";
+"prefs.toolchain.browse" = "Browse...";
+"prefs.toolchain.selectTool" = "Select %@ executable";
+"prefs.toolchain.pathValid" = "Path is valid";
+"prefs.toolchain.pathNotFound" = "File not found";
+"prefs.toolchain.pathIsDirectory" = "Path is a directory, not a file";
+"prefs.toolchain.pathNotExecutable" = "File is not executable";
+
+// MARK: - Preferences - About
+"prefs.about.version" = "Version %@";
+
+// MARK: - Android Device State
+"android.wireless.connect" = "Connect over Wi-Fi…";
+"android.wireless.connectShort" = "Connect";
+"android.wireless.inlineHint" = "Enter the phone IP to connect over Wi-Fi; click Enable Wireless Debugging to make the current USB device wireless-capable.";
+"android.wireless.inlineHintNoUSB" = "Enter the phone IP to connect. If wireless debugging was never enabled, plug in USB first and click Enable Wireless Debugging.";
+"android.wireless.pairTitle" = "Pair with Code";
+"android.wireless.pairCode" = "Pairing Code";
+"android.wireless.pairPort" = "Pairing Port";
+"android.wireless.pairAction" = "Pair & Connect";
+"android.wireless.pairHint" = "On the phone: Developer options → Wireless debugging → Pair device with pairing code. It shows the pairing port and a 6-digit code.";
+"android.wireless.discover" = "Scan Devices";
+"android.wireless.discoverEmpty" = "No wireless debugging services found. Make sure the phone is on the same Wi-Fi and wireless debugging is enabled.";
+"android.wireless.discovered" = "Found %d wireless debugging service(s)";
+"android.wireless.showDiagnostics" = "Diagnose";
+"android.wireless.stepKillServer" = "Restart adb server";
+"android.wireless.stepStartServer" = "Start adb server";
+"android.wireless.stepConnect" = "Connect device";
+"android.wireless.stepVerify" = "Verify device online";
+"android.wireless.stepTcpip" = "Enable TCP mode";
+"android.wireless.stepReconnect" = "Reconnect";
+"android.wireless.stepRestartAdb" = "Restart adb (fix No route to host)";
+"android.wireless.stepConnectRetry" = "Retry connect";
+"android.wireless.stepPair" = "Pair device";
+"android.wireless.pairSuccess" = "Paired successfully";
+"devicePicker.title" = "Connect Devices";
+"devicePicker.filterAll" = "All";
+"devicePicker.filterWired" = "USB";
+"devicePicker.filterWireless" = "Wi-Fi";
+"devicePicker.empty" = "No devices found. Connect or scan first.";
+"devicePicker.scanWireless" = "Scan Wi-Fi Devices";
+"devicePicker.stopAll" = "Stop All";
+"devicePicker.viaUSB" = "USB";
+"devicePicker.viaWiFi" = "Wi-Fi";
+"devicePicker.offline" = "Offline";
+"devicePicker.start" = "Mirror";
+"devicePicker.stop" = "Stop";
+"devicePicker.switchTitle" = "Switch Mirror Device";
+"devicePicker.switchMessage" = "Currently mirroring \"%@\". Switch to \"%@\"?";
+"devicePicker.switchConfirm" = "Switch";
+"devicePicker.toggleTooltip" = "Select and connect multiple devices";
+"devicePicker.manualSection" = "Manual connect & pairing";
+"android.wireless.chooseDeviceTitle" = "Choose a Device";
+"android.wireless.chooseDeviceMessage" = "Multiple wireless debugging devices found. Choose one to connect.";
+"android.wireless.discoveredPort" = "Device found (port %d)";
+"android.wireless.pairConnectedNeedPort" = "Paired successfully, but the debug port could not be discovered. Check the port shown on the phone's Wireless debugging page and enter it as IP:port.";
+"android.wireless.diagnosticsFailed" = "Wi-Fi connection failed; check the diagnostic output";
+"android.wireless.connectTitle" = "Connect an Android device over Wi-Fi";
+"android.wireless.connectMessage" = "Enter the IP address shown on your phone. Enable it in Developer options → Wireless debugging, or connect via USB first and click Enable Wireless Debugging.";
+"android.wireless.hostPlaceholder" = "Device IP or IP:port";
+"android.wireless.portLabel" = "Port";
+"android.wireless.enableForUSB" = "Enable Wireless Debugging";
+"android.wireless.enableHint" = "A USB-connected device can enable wireless debugging directly; afterwards you can unplug the cable.";
+"android.wireless.connected" = "Connected over Wi-Fi: %@";
+"android.wireless.disconnect" = "Disconnect Wi-Fi";
+"android.wireless.invalidHost" = "Enter a valid IP address";
+"android.wireless.needUSB" = "Connect the device via USB first, then tap Enable Wireless Debugging";
+"android.wireless.enabledTitle" = "Wireless Debugging Enabled";
+"android.wireless.enabledMessage" = "Device IP is %@, port %d. You can now unplug the cable and reconnect via Connect over Wi-Fi.";
+"android.wireless.connectFailed" = "Wi-Fi Connection Failed";
+"android.wireless.connectFailedDetail" = "Wi-Fi connection failed: %@";
+"android.wireless.enableFailed" = "Failed to enable wireless debugging: %@";
+"android.wireless.ipNotFound" = "Cannot get the device IP. Make sure the phone is on Wi-Fi";
+"android.state.device" = "Connected";
+"android.state.unauthorized" = "Waiting for Authorization";
+"android.state.offline" = "Offline";
+"android.state.noPermissions" = "No Permissions";
+"android.state.unknown" = "Unknown Status";
+
+// MARK: - Android Device Hints
+"android.hint.unauthorized" = "Please tap \"Allow USB debugging\" on your phone";
+"android.hint.offline" = "Please reconnect the USB cable";
+"android.hint.noPermissions" = "Please check adb permission settings";
+"android.hint.unknown" = "Please reconnect the device";
+
+// MARK: - iOS Device
+"ios.hint.trust" = "Please tap \"Trust This Computer\" on your device";
+"ios.hint.occupied" = "Device is occupied by %@, please close it and try again";
+"ios.hint.occupiedUnknown" = "Device is occupied by another app, please close it and try again";
+"ios.hint.locked" = "Device is locked/sleeping, please unlock and try again";
+"ios.hint.otherApp" = "another app";
+"ios.onlyMirror" = "Mirror only";
+"ios.onlyMirrorHint" = "iOS devices can be mirrored but not controlled";
+
+// MARK: - Errors
+"error.connectionFailed" = "Connection failed: %@";
+"error.permissionDenied" = "Permission denied";
+"error.windowNotFound" = "Screen mirroring window not found";
+"error.captureStartFailed" = "Capture start failed: %@";
+"error.captureInterrupted" = "Capture interrupted";
+"error.processTerminated" = "Process terminated (exit code: %d)";
+"error.timeout" = "Connection timeout";
+"error.noDevice" = "No available %@ device";
+"error.startCaptureFailed" = "Failed to start %@ capture: \n%@";
+
+// MARK: - Toolbar
+"toolbar.refresh" = "Refresh";
+"toolbar.refreshing" = "Refreshing...";
+"toolbar.refreshComplete" = "Device list refreshed";
+"toolbar.deviceInfoRefreshed" = "Device info refreshed";
+"toolbar.swap" = "Swap";
+"toolbar.swapPanels" = "Swap";
+"toolbar.swapPanels.tooltip" = "Swap device positions";
+"toolbar.preferences" = "Preferences";
+"toolbar.swap.tooltip" = "Swap device positions";
+"toolbar.refresh.tooltip" = "Refresh device list";
+"toolbar.preferences.tooltip" = "Preferences";
+"toolbar.toggleBezel" = "Toggle Bezel";
+"toolbar.toggleBezel.tooltip" = "Show/Hide device bezel";
+"toolbar.showBezel" = "Show Bezel";
+"toolbar.hideBezel" = "Hide Bezel";
+"toolbar.layoutMode" = "Layout Mode";
+"toolbar.layoutMode.tooltip" = "Switch display layout mode";
+"toolbar.preventSleep" = "Prevent Sleep";
+"toolbar.preventSleep.tooltip" = "Prevent auto sleep/lock during capture";
+"toolbar.preventSleep.on" = "Sleep prevention enabled";
+"toolbar.preventSleep.off" = "Sleep prevention disabled";
+"toolbar.fullScreen" = "Full Screen";
+"toolbar.fullScreen.tooltip" = "Enter/exit full screen (⌃⌘F)";
+
+// MARK: - Permission
+"permission.unknown" = "Unknown";
+"permission.checking" = "Checking...";
+"permission.granted" = "Granted";
+"permission.denied" = "Denied";
+"permission.notDetermined" = "Not Determined";
+"permission.screenRecording.name" = "Screen Recording";
+"permission.screenRecording.desc" = "For capturing Android device screen (fallback only)";
+"permission.camera.name" = "Camera";
+"permission.camera.desc" = "For capturing iOS device screen via USB";
+"permission.microphone.name" = "Microphone";
+"permission.microphone.desc" = "Captures microphone audio while recording";
+"permission.openSystemPrefs" = "Open Settings";
+"permission.requestAgain" = "Request Again";
+"permission.requestAgainTitle" = "Manual Re-authorization Needed";
+"permission.requestAgainMessage" = "macOS only shows the permission prompt the first time. To re-authorize, click Open Settings and tick StageCast in the list; if it is already ticked but still not working, untick and re-tick it, or quit and reopen the app.";
+"permission.deniedHelp" = "Click Request Again to try showing the prompt once more";
+"permission.microphoneHelperNote" = "Microphone access is requested by the separate StageCast Audio Helper. In System Settings, tick both StageCast and StageCast Audio Helper in the Microphone list.";
+"permission.revoke" = "Revoke";
+"permission.revokeTitle" = "Revoke Permission";
+"permission.revokeScreenRecordingHint" = "To revoke screen recording permission, please uncheck StageCast in System Settings > Privacy & Security > Screen Recording, then restart the app.";
+"permission.revokeCameraHint" = "To revoke camera permission, please uncheck StageCast in System Settings > Privacy & Security > Camera, then restart the app.";
+"permission.revokeMicrophoneHint" = "To revoke microphone permission, please uncheck StageCast in System Settings > Privacy & Security > Microphone, then restart the app.";
+"permission.revokeNote" = "To revoke a permission, click the \"Revoke\" button and manually uncheck StageCast in System Settings. Changes will take effect after restarting the app.";
+
+// MARK: - Background Color Mode
+"background.followTheme" = "Follow Theme";
+"background.custom" = "Custom";
+
+// MARK: - Connection State
+"connection.notConnected" = "Not Connected";
+"connection.connecting" = "Connecting...";
+"connection.waitingAuth" = "Waiting for Authorization";
+"connection.connected" = "Connected";
+"connection.error" = "Error: %@";
+"connection.abnormalState" = "Device state abnormal: %@";
+"connection.disconnected" = "Device disconnected";
+
+// MARK: - Overlay
+"overlay.startCapture" = "Start Mirroring";
+"overlay.stop" = "Stop";
+"overlay.captureStopped" = "%@ mirroring stopped";
+"overlay.connectDevice" = "Connect device via USB cable";
+"overlay.connectIOS" = "Connect iPhone via USB cable";
+"overlay.connectAndroid" = "Connect Android device via USB cable";
+"overlay.waitingConnection" = "Waiting for connection...";
+"overlay.deviceReady" = "Device ready";
+"overlay.deviceDetected" = "Device detected";
+"overlay.captureIOSHint" = "Capture iPhone screen directly";
+"overlay.captureAndroidHint" = "Start scrcpy mirroring";
+"overlay.toolNotInstalled" = "%@ Not Installed";
+"overlay.needInstall" = "%@ is required";
+"overlay.installTool" = "Install %@";
+"overlay.waitingForIPhone" = "Waiting for iPhone";
+"overlay.waitingForAndroid" = "Waiting for Android";
+"overlay.waitingForDevice" = "Waiting for a phone";
+"overlay.waitingHint" = "Open \"Connect Devices\" and pick a phone to start mirroring";
+
+// MARK: - Device Info
+"deviceInfo.unknownModel" = "Unknown Model";
+"deviceInfo.unknownVersion" = "Unknown Version";
+"deviceInfo.unknown" = "Unknown";
+
+// MARK: - Toolchain Errors
+"toolchain.bundled" = "Bundled %@";
+"toolchain.notFound.adb" = "adb not found";
+"toolchain.notFound.scrcpy" = "scrcpy not found";
+"toolchain.installHomebrew" = "Please install Homebrew first";
+"toolchain.installFailed" = "Install failed";
+"toolchain.installScrcpyHint" = "scrcpy is required for Android screen mirroring";
+"toolchain.installScrcpyButton" = "Install scrcpy";
+
+// MARK: - Android Connection
+"android.authTimeout" = "Authorization timeout, please tap \"Allow USB debugging\" on your phone";
+"android.mirrorStartFailed" = "Failed to start mirroring: %@";
+"android.mirrorTerminated" = "Mirroring unexpectedly terminated (exit code: %d)";
+"android.cannotGetIp" = "Cannot get device IP address";
+
+// MARK: - Process Errors
+"process.notFound" = "Executable not found: %@";
+"process.failed" = "Execution failed (exit code: %d): %@";
+"process.timeout" = "Execution timeout";
+"process.cancelled" = "Execution cancelled";
+
+// MARK: - ADB Service
+"adb.startFailed" = "Failed to start adb service: %@";
+"adb.stopFailed" = "Failed to stop adb service: %@";
+
+// MARK: - Device Capture Errors
+"capture.deviceNotConnected" = "Device not connected";
+"capture.sessionNotInitialized" = "Capture session not initialized";
+"capture.cannotGetDevice" = "Cannot get capture device: %@";
+"capture.cannotAddInput" = "Cannot add video input";
+"capture.inputFailed" = "Failed to create video input: %@";
+"capture.deviceNotReady" = "Cannot use %@. \n\nPlease ensure: \n1. iPhone screen is unlocked \n2. Tap 'Trust This Computer' on iPhone \n3. Camera permission is granted";
+"capture.cannotAddOutput" = "Cannot add video output";
+
+// MARK: - iOS Screen Mirror
+"ios.enableFailed" = "Enable failed, error code: %d";
+
+// MARK: - iOS Device Type
+"ios.deviceType.unknown" = "Unknown";
+
+// MARK: - Installation Log
+"install.checkingHomebrew" = "🔍 Checking Homebrew...\n";
+"install.homebrewNotFound" = "❌ Homebrew not found\n\n";
+"install.installHomebrewPrompt" = "Please install Homebrew first:\n/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"";
+"install.homebrewFound" = "✅ Found Homebrew: %@\n\n";
+"install.startInstall" = "📦 Installing scrcpy (this may take a few minutes)...\n";
+"install.installSuccess" = "✅ scrcpy installed successfully\n";
+"install.installFailed" = "❌ Installation failed: %@\n";
+"install.verifyingInstall" = "🔍 Verifying installation...\n";
+
+// MARK: - Color Compensation
+"color.preset.neutral" = "Neutral";
+"color.preset.coldTV" = "Cold TV";
+"color.preset.grayishTV" = "Grayish TV";
+"color.preset.oversaturatedTV" = "Oversaturated TV";
+"color.compensation.title" = "Color Compensation";
+"color.compensation.enabled" = "Enable Color Compensation";
+"color.compensation.preset" = "Preset";
+"color.compensation.compare" = "A/B Compare";
+"color.compensation.compare.compensated" = "Compensated";
+"color.compensation.compare.original" = "Original";
+"color.compensation.reset" = "Reset";
+"color.compensation.savePreset" = "Save Preset...";
+"color.compensation.deletePreset" = "Delete";
+"color.compensation.customPresets" = "Custom";
+"color.compensation.savePresetTitle" = "Save Preset";
+"color.compensation.savePresetMessage" = "Enter a name for the new preset:";
+"color.compensation.savePresetPlaceholder" = "Preset Name";
+"color.compensation.presetNameExists" = "A preset with this name already exists. Please choose a different name.";
+"color.compensation.deviceSelector" = "Device Selection";
+"color.compensation.globalSettings" = "Global Settings";
+"color.compensation.iosSettings" = "iOS Settings";
+"color.compensation.androidSettings" = "Android Settings";
+"color.mode.useGlobal" = "Use Global Settings";
+"color.mode.independent" = "Independent Settings";
+"color.section.enable" = "Switch";
+"color.section.preset" = "Presets";
+"color.section.brightness" = "Brightness Curve";
+"color.section.color" = "Color";
+"color.section.actions" = "Actions";
+"color.section.deviceMode" = "Device Mode";
+"color.params.blackLift" = "Black Lift";
+"color.params.whiteClip" = "White Clip";
+"color.params.highlightRollOff" = "Highlight Roll-Off";
+"color.params.temperature" = "Temperature";
+"color.params.tint" = "Tint";
+"color.params.saturation" = "Saturation";
+
+// MARK: - Toast
+"toast.exportLogsSuccess" = "Logs exported successfully";
+"toast.exportLogsFailed" = "Failed to export logs: %@";
+
+// MARK: - Recording
+"recording.record" = "Record";
+"recording.stop" = "Stop Recording";
+"recording.started" = "Recording started";
+"recording.startedNoMicrophoneDevice" = "Recording started (no microphone detected, screen only)";
+"recording.startedMicrophoneDenied" = "Recording started (microphone permission not granted, screen only)";
+"recording.startedMicrophoneUnavailable" = "Recording started (microphone unavailable, may be in use by another app, screen only)";
+"recording.saved" = "Recording saved";
+"recording.startFailed" = "Failed to start recording";
+"recording.microphonePermissionDenied" = "Microphone permission is disabled. Allow StageCast to access the microphone in System Settings.";
+"recording.outputDirectoryUnavailable" = "Unable to create recording output directory";
+"recording.insufficientDiskSpace" = "Insufficient disk space. Recording stopped.";
+"recording.captureInterrupted" = "Screen sharing interrupted";
+"recording.openOutputDirectory" = "Open recording folder";
+"recording.openHistory" = "View recording history";
+"recording.back" = "Back";
+"recording.play" = "Play";
+"recording.pause" = "Pause";
+"recording.revealDirectory" = "Show Folder";
+"recording.delete" = "Delete";
+"recording.deleteConfirmTitle" = "Delete this recording?";
+"recording.deleteConfirmMessage" = "\"%@\" will be moved to the Trash. You can restore it from there.";
+"recording.deleteConfirmButton" = "Move to Trash";
+"recording.cancel" = "Cancel";
+"recording.deleteFailed" = "Failed to delete recording";
+"recording.historySummary" = "%1$d recordings · %2$@";
+"recording.replay" = "Replay";
+"recording.noHistory" = "No recordings yet";
+"recording.historyTitle" = "Recording History";
+"recording.historyDetail" = "%@ · %d devices";
+"recording.rewindFiveSeconds" = "-5s";
+"recording.forwardFiveSeconds" = "+5s";
+"recording.noSnapshots" = "No recorded screen content";
+"recording.replayLoadFailed" = "Failed to load recording audio";
+"recording.replayTitle" = "Replay %@";
+"recording.replayDeviceCount" = "%d devices";
+"recording.savedLocation" = "Saved: %@";
+"recording.recordingWithElapsed" = "Recording %@";
+
+// MARK: - Menu (Color)
+"menu.view" = "View";
+"menu.colorCompensation" = "Color Compensation...";
+"menu.toggleDeviceBezel" = "Show Device Bezel";
+"menu.togglePreventSleep" = "Prevent Sleep When Capturing";
+
+"toolbar.swap" = "Swap";
+"toolbar.swapTooltip" = "Swap device positions";
+
+"overlay.control.mute" = "Mute";
+"overlay.control.unmute" = "Unmute";
+
+// MARK: - Floating Window
+"floating.disconnected" = "Device disconnected";
+"floating.disconnectedHint" = "Mirroring stopped. The window stays in place.";
+"floating.reconnect" = "Reconnect";
+"floating.reconnectFailed" = "Device not found. Make sure the phone is on the same network.";
+"floating.alwaysOnTop" = "Always on Top";
+"floating.recenter" = "Center on Screen";
+"floating.zoomPercent" = "Zoom %d%%";
